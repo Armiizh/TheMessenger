@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.Navigation
 import com.example.themessenger.MainViewModel
 import com.example.themessenger.R
 import com.example.themessenger.navigation.NavRoute
@@ -97,7 +96,7 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                     shape = RoundedCornerShape(10.dp),
                     enabled = mobileNumber.isNotEmpty() && mobileNumber.length == 10,
                     colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = colorResource(id = R.color.greeeen),
+                        containerColor = colorResource(id = R.color.green),
                         contentColor = colorResource(id = R.color.white)
                     ),
                 ) {
