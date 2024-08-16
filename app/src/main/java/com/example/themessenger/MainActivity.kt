@@ -1,11 +1,15 @@
 package com.example.themessenger
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.themessenger.screens.login.PhoneNumberScreen
+import androidx.compose.ui.platform.LocalContext
+import com.example.themessenger.navigation.NavHostMessenger
 import com.example.themessenger.ui.theme.TheMessengerTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +17,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TheMessengerTheme {
-                PhoneNumberScreen()
+                val context = LocalContext.current
+                val mViewModel: MainViewModel =
+                    viewModel(factory = MainViewModel.MainViewModelFactory(context.applicationContext as Application))
+                val navController = rememberNavController()
+                NavHostMessenger(mViewModel, navController)
             }
         }
     }

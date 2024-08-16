@@ -67,5 +67,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.androidx.navigation.compose)
+
     implementation("network.chaintech:cmp-country-code-picker:1.0.0")
 }
