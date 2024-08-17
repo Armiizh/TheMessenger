@@ -1,7 +1,9 @@
 package com.example.themessenger.screens.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -34,6 +38,12 @@ import network.chaintech.cmpcountrycodepicker.ui.CountryPickerBasicTextField
 fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
     Scaffold(
         content = { paddingValues ->
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = painterResource(id = R.drawable.bg4),
+                contentDescription = "",
+                contentScale = ContentScale.Crop
+            )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -88,8 +98,8 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                         shape = RoundedCornerShape(10.dp),
                         verticalDividerColor = Color(0XFFDDDDDD),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0XFFDDDDDD),
-                            unfocusedBorderColor = Color(0XFFDDDDDD)
+                            focusedBorderColor = Color.Black,
+                            unfocusedBorderColor = Color.Black
                         )
                     )
                 }
@@ -100,7 +110,7 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                         .padding(top = 16.dp)
                         .padding(horizontal = 36.dp)
                         .height(48.dp),
-                    onClick = { navController.navigate(NavRoute.Register.route) },
+                    onClick = { navController.navigate(NavRoute.Chats.route) },
                     enabled = mobileNumber.isNotEmpty() && mobileNumber.length == 10,
                     colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color.Black,
