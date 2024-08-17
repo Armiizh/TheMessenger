@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,17 +20,22 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,14 +51,34 @@ import androidx.navigation.NavHostController
 import com.example.themessenger.MainViewModel
 import com.example.themessenger.R
 import com.example.themessenger.navigation.NavRoute
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+data class MenuItem(val iconId: Int, val text: String)
+
 @Composable
 fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val menuItems1 = listOf(
+        MenuItem(R.drawable.favourites, "Избранное"),
+        MenuItem(R.drawable.recentcalls, "Недавние звонки"),
+        MenuItem(R.drawable.devices, "Устройства"),
+        MenuItem(R.drawable.folders, "Папки с чатами"),
+    )
+
+    val menuItems2 = listOf(
+        MenuItem(R.drawable.notification, "Уведомления и звуки"),
+        MenuItem(R.drawable.confidentiality, "Конфиденциальность"),
+        MenuItem(R.drawable.data, "Данные и память"),
+        MenuItem(R.drawable.formalization, "Оформление"),
+        MenuItem(R.drawable.battery, "Энергосбережение"),
+        MenuItem(R.drawable.language, "Язык")
+    )
+
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -61,132 +87,28 @@ fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
         content = {
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        start = 2.dp,
-                                        end = 12.dp
-                                    ),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Menu,
-                                    contentDescription = "Меню",
-                                    modifier = Modifier.clickable {
-                                        scope.launch {
-                                            drawerState.open()
-                                        }
-                                    }
-                                )
-                                Text(
-                                    text = "Чаты",
-                                    fontFamily = FontFamily(Font(R.font.roboto_medium))
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    )
+                    ChatTopAppBar(scope, drawerState)
                 },
                 content = { paddingValues ->
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(paddingValues),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(4) { index ->
-                            ChatListItem(
-                                userName = "Пользователь $index",
-                                userIcon = Icons.Filled.Person,
-                                messageText = "Сообщение $index",
-                                messageDate = "12:34",
-                                unreadCount = if (index % 2 == 0) 0 else 1
-                            )
-                        }
-                    }
+                    ChatContent(paddingValues, navController)
                 }
             )
         },
         drawerContent = {
             Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) },
                 modifier = Modifier.fillMaxWidth(0.7f),
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "Меню",
-                                fontFamily = FontFamily(Font(R.font.roboto_medium))
-                            )
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    )
+                    DrawerTopAppBar()
                 },
                 content = { paddingValues ->
-                    Column(
-                        modifier = Modifier
-                            .padding(paddingValues)
-                    ) {
-                        MyProfile(navController)
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .padding(top = 8.dp, bottom = 8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                        ) {
-                            Favourites()
-                            Recentcalls()
-                            Devices()
-                            ChatFolders()
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .padding(top = 8.dp, bottom = 8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                        ) {
-                            NotificationsAndSounds()
-                            Confidentiality()
-                            DataAndMemory()
-                            Formalisation()
-                            EnergySaving()
-                            Language()
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp),
-                            colors = ButtonDefaults.elevatedButtonColors(
-                                containerColor = colorResource(id = R.color.Red),
-                                contentColor = colorResource(id = R.color.white)
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = { navController.navigate(NavRoute.Login.route) }) {
-                            Text(
-                                text = "Выйти",
-                                fontFamily = FontFamily(Font(R.font.roboto_light))
-                            )
-                        }
-                    }
+                    DrawerContent(
+                        paddingValues,
+                        navController,
+                        menuItems1,
+                        snackbarHostState,
+                        menuItems2
+                    )
                 }
             )
         }
@@ -194,283 +116,117 @@ fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
 }
 
 @Composable
-private fun ChatFolders() {
-    Row(
+private fun DrawerContent(
+    paddingValues: PaddingValues,
+    navController: NavHostController,
+    menuItems1: List<MenuItem>,
+    snackbarHostState: SnackbarHostState,
+    menuItems2: List<MenuItem>
+) {
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
+            .padding(paddingValues)
     ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Папки с чатами",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
+        MyProfile(navController)
+        DrawerItem(menuItem = menuItems1, snackbarHostState)
+        DrawerItem(menuItem = menuItems2, snackbarHostState)
         Spacer(modifier = Modifier.weight(1f))
-        Icon(
+        Button(
             modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            colors = ButtonDefaults.elevatedButtonColors(
+                containerColor = colorResource(id = R.color.Red),
+                contentColor = colorResource(id = R.color.white)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            onClick = { navController.navigate(NavRoute.Login.route) }) {
+            Text(
+                text = "Выйти",
+                fontFamily = FontFamily(Font(R.font.roboto_light))
+            )
+        }
     }
 }
 
 @Composable
-private fun Devices() {
-    Row(
+@OptIn(ExperimentalMaterial3Api::class)
+private fun DrawerTopAppBar() {
+    TopAppBar(
+        title = {
+            Text(
+                text = "Меню",
+                fontFamily = FontFamily(Font(R.font.roboto_medium))
+            )
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    )
+}
+
+@Composable
+private fun ChatContent(
+    paddingValues: PaddingValues,
+    navController: NavHostController
+) {
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
+            .padding(paddingValues),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(
-            modifier = Modifier.padding(4.dp).size(24.dp),
-            painter = painterResource(id = R.drawable.devices),
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Устройства",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
+        items(4) { index ->
+            ChatListItem(
+                userName = "Пользователь $index",
+                userIcon = Icons.Filled.Person,
+                messageText = "Сообщение $index",
+                messageDate = "12:34",
+                unreadCount = if (index % 2 == 0) 0 else 1,
+                navController = navController
+            )
+        }
     }
 }
 
 @Composable
-private fun Recentcalls() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp).size(24.dp),
-            painter = painterResource(id = R.drawable.recentcalls),
-            contentDescription = "sss"
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ChatTopAppBar(
+    scope: CoroutineScope,
+    drawerState: DrawerState
+) {
+    TopAppBar(
+        title = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = "Меню",
+                    modifier = Modifier
+                        .clickable {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                )
+                Spacer(modifier = Modifier.weight(0.8f))
+                Text(
+                    text = "Чаты",
+                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
-        Text(
-            text = "Недавние звонки",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun Favourites() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp).size(24.dp),
-            painter = painterResource(id = R.drawable.favourites),
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Избранное",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun Language() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Язык",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun EnergySaving() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Энергосбережение",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun Formalisation() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Оформление",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun DataAndMemory() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Данные и память",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun Confidentiality() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "sss"
-        )
-        Text(
-            text = "Конфиденциальность",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
-}
-
-@Composable
-private fun NotificationsAndSounds() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier.padding(4.dp),
-            imageVector = Icons.Filled.Person,
-            contentDescription = "Уведомления и звуки"
-        )
-        Text(
-            text = "Уведомления и звуки",
-            fontFamily = FontFamily(Font(R.font.roboto_light))
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp),
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Gray)
-    }
+    )
 }
 
 @Composable
@@ -493,6 +249,7 @@ private fun MyProfile(navController: NavHostController) {
             contentDescription = "Профиль"
         )
         Text(
+            modifier = Modifier.padding(start = 4.dp),
             text = "Мой профиль",
             fontFamily = FontFamily(Font(R.font.roboto_light)),
             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -504,7 +261,8 @@ private fun MyProfile(navController: NavHostController) {
                 .padding(4.dp),
             painter = painterResource(id = R.drawable.right_arrow),
             contentDescription = "",
-            tint = Color.Gray)
+            tint = Color.Gray
+        )
     }
 }
 
@@ -515,13 +273,15 @@ fun ChatListItem(
     userIcon: ImageVector,
     messageText: String,
     messageDate: String,
-    unreadCount: Int
+    unreadCount: Int,
+    navController: NavHostController
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .padding(12.dp),
+            .padding(12.dp)
+            .clickable { navController.navigate(NavRoute.Chat.route) },
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
@@ -534,7 +294,7 @@ fun ChatListItem(
                     .padding(4.dp)
                     .size(36.dp),
                 imageVector = userIcon,
-                contentDescription = "User Icon"
+                contentDescription = ""
             )
             Column {
                 Text(text = userName, fontFamily = FontFamily(Font(R.font.roboto_medium)))
@@ -576,3 +336,56 @@ fun BadgeBox(
     }
 }
 
+
+@Composable
+private fun DrawerItem(menuItem: List<MenuItem>, snackbarHostState: SnackbarHostState) {
+    val scope = rememberCoroutineScope()
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .padding(top = 8.dp, bottom = 8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(8.dp)
+            )
+    ) {
+        menuItem.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Нажата кнопка: ${item.text}",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(24.dp),
+                    painter = painterResource(id = item.iconId),
+                    contentDescription = ""
+                )
+                Text(
+                    modifier = Modifier.padding(start = 4.dp),
+                    text = item.text,
+                    fontFamily = FontFamily(Font(R.font.roboto_light))
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(4.dp),
+                    painter = painterResource(id = R.drawable.right_arrow),
+                    contentDescription = "",
+                    tint = Color.Gray
+                )
+            }
+        }
+    }
+}

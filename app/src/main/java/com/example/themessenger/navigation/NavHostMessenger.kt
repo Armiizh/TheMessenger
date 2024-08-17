@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.themessenger.MainViewModel
+import com.example.themessenger.screens.chats.ChatScreen
 import com.example.themessenger.screens.chats.ChatsScreen
 import com.example.themessenger.screens.login.ConfirmScreen
 import com.example.themessenger.screens.login.LoginScreen
@@ -41,7 +42,7 @@ fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController
             )
         }
         composable(NavRoute.Chat.route) {
-            ChatsScreen(
+            ChatScreen(
                 navController = navController,
                 viewModel = mViewModel
             )
