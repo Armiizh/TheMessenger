@@ -126,7 +126,7 @@ private fun EnterCode(navController: NavHostController) {
                 if (it.length == 6 && it != Constants.CODE) {
                     incorrectCode = true
                 } else if (it.length == 6) {
-                    navController.navigate(NavRoute.Chats.route)
+                    navController.navigate(NavRoute.Register.route)
                 }
             },
             colors = TextFieldDefaults.textFieldColors(

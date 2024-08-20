@@ -110,7 +110,7 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                         .padding(top = 16.dp)
                         .padding(horizontal = 36.dp)
                         .height(48.dp),
-                    onClick = { navController.navigate(NavRoute.Register.route) },
+                    onClick = { navController.navigate(NavRoute.Confirm.route) },
                     enabled = mobileNumber.isNotEmpty() && mobileNumber.length == 10,
                     colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color.Black,

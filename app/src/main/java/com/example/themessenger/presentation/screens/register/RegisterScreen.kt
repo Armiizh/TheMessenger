@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -159,17 +159,18 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                                     fontFamily = FontFamily(Font(R.font.roboto_regular))
                                 )
                             )
-                            Button(
+                            ElevatedButton(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(top = 8.dp),
-                                onClick = { navController.navigate(NavRoute.Register.route) },
+                                onClick = { navController.navigate(NavRoute.Chats.route) },
                                 shape = RoundedCornerShape(10.dp),
                                 enabled = name.isNotEmpty() && username.isNotEmpty(),
                                 colors = ButtonDefaults.elevatedButtonColors(
-                                    containerColor = colorResource(id = R.color.green),
-                                    contentColor = colorResource(id = R.color.white)
+                                    containerColor = Color.Black,
+                                    contentColor = Color.White
                                 ),
+                                elevation = ButtonDefaults.buttonElevation(16.dp)
                             ) {
                                 Text(
                                     text = "Войти или зарегистрироваться",
