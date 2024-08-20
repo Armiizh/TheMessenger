@@ -1,16 +1,16 @@
-package com.example.themessenger.navigation
+package com.example.themessenger.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.themessenger.MainViewModel
-import com.example.themessenger.screens.chats.ChatScreen
-import com.example.themessenger.screens.chats.ChatsScreen
-import com.example.themessenger.screens.login.ConfirmScreen
-import com.example.themessenger.screens.login.LoginScreen
-import com.example.themessenger.screens.profile.ProfileScreen
-import com.example.themessenger.screens.register.RegisterScreen
+import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.presentation.screens.chats.ChatScreen
+import com.example.themessenger.presentation.screens.chats.ChatsScreen
+import com.example.themessenger.presentation.screens.login.ConfirmScreen
+import com.example.themessenger.presentation.screens.login.LoginScreen
+import com.example.themessenger.presentation.screens.profile.ProfileScreen
+import com.example.themessenger.presentation.screens.register.RegisterScreen
 import com.example.themessenger.utils.Constants
 
 @Composable

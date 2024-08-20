@@ -69,5 +69,11 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
 
-    implementation("network.chaintech:cmp-country-code-picker:1.0.0")
+    implementation(libs.cmp.country.code.picker)
+    implementation (libs.retrofit)
+    implementation (libs.converter.gson)
+    implementation (libs.okhttp)
+    implementation (libs.logging.interceptor)
+    implementation (libs.androidx.runtime.livedata)
+
 }

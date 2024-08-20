@@ -10,4 +10,7 @@
     <color name="green">#7CAF6A</color>
     <color name="LightLightGray">#DBDBDB</color>
     <color name="Red">#FF5555</color>
+    <color name="Brown">#7D574E</color>
+    <color name="TopAppBarColor">#9A8C7F</color>
+    <color name="DrawerContent">#5E564F</color>
 </resources>

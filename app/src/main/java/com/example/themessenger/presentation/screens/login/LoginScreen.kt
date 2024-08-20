@@ -1,4 +1,4 @@
-package com.example.themessenger.screens.login
+package com.example.themessenger.presentation.screens.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -28,9 +28,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.MainViewModel
+import com.example.themessenger.presentation.MainViewModel
 import com.example.themessenger.R
-import com.example.themessenger.navigation.NavRoute
+import com.example.themessenger.presentation.navigation.NavRoute
 import network.chaintech.cmpcountrycodepicker.model.CountryDetails
 import network.chaintech.cmpcountrycodepicker.ui.CountryPickerBasicTextField
 
@@ -110,7 +110,7 @@ fun LoginScreen(navController: NavHostController, viewModel: MainViewModel) {
                         .padding(top = 16.dp)
                         .padding(horizontal = 36.dp)
                         .height(48.dp),
-                    onClick = { navController.navigate(NavRoute.Chats.route) },
+                    onClick = { navController.navigate(NavRoute.Register.route) },
                     enabled = mobileNumber.isNotEmpty() && mobileNumber.length == 10,
                     colors = ButtonDefaults.elevatedButtonColors(
                         containerColor = Color.Black,

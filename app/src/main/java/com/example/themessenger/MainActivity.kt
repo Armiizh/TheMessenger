@@ -6,10 +6,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.platform.LocalContext
-import com.example.themessenger.navigation.NavHostMessenger
-import com.example.themessenger.ui.theme.TheMessengerTheme
+import com.example.themessenger.presentation.navigation.NavHostMessenger
+import com.example.themessenger.presentation.ui.theme.TheMessengerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.themessenger.presentation.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

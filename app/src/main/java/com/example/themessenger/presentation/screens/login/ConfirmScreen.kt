@@ -1,11 +1,13 @@
-package com.example.themessenger.screens.login
+package com.example.themessenger.presentation.screens.login
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -26,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -34,9 +38,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.MainViewModel
+import com.example.themessenger.presentation.MainViewModel
 import com.example.themessenger.R
-import com.example.themessenger.navigation.NavRoute
+import com.example.themessenger.presentation.navigation.NavRoute
 import com.example.themessenger.utils.Constants
 import kotlin.math.roundToInt
 
@@ -45,12 +49,18 @@ import kotlin.math.roundToInt
 fun ConfirmScreen(navController: NavHostController, viewModel: MainViewModel) {
 
     Scaffold(
-        modifier = Modifier
-            .padding(horizontal = 36.dp)
-            .padding(top = 36.dp),
         content = { paddingValues ->
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = painterResource(id = R.drawable.bg4),
+                contentDescription = "",
+                contentScale = ContentScale.Crop
+            )
             Column(
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .padding(top = 72.dp)
+                    .padding(horizontal = 36.dp)
             ) {
                 Texts()
                 EnterCode(navController)

@@ -1,4 +1,4 @@
-package com.example.themessenger.ui.theme
+package com.example.themessenger.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
