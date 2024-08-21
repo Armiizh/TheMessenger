@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
                     viewModel(factory = MainViewModel.MainViewModelFactory(context.applicationContext as Application))
                 val navController = rememberNavController()
                 NavHostMessenger(mViewModel, navController)
+
             }
         }
     }
