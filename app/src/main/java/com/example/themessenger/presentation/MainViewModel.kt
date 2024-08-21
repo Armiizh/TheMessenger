@@ -29,6 +29,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setMobileNumber(mobileNumber: String) {
         this.mobileNumber = mobileNumber
     }
+    fun getMobileNumber(): String {
+        return mobileNumber
+    }
     fun setAuthCode(authCode: String) {
         this.authCode = authCode
     }

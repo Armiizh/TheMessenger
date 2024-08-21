@@ -93,7 +93,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                         ) {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = viewModel.mobileNumber,
+                                value = viewModel.getMobileNumber(),
                                 onValueChange = {},
                                 label = {
                                     Text(
