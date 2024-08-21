@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.themessenger.presentation.MainViewModel
 import com.example.themessenger.R
@@ -63,7 +64,7 @@ fun ConfirmScreen(navController: NavHostController, viewModel: MainViewModel) {
                     .padding(horizontal = 36.dp)
             ) {
                 Texts()
-                EnterCode(navController)
+                EnterCode(navController, viewModel)
             }
         }
     )
@@ -81,7 +82,7 @@ private fun Texts() {
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun EnterCode(navController: NavHostController) {
+private fun EnterCode(navController: NavHostController, viewModel: MainViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,6 +127,8 @@ private fun EnterCode(navController: NavHostController) {
                 if (it.length == 6 && it != Constants.CODE) {
                     incorrectCode = true
                 } else if (it.length == 6) {
+                    viewModel.setAuthCode(it)
+                    viewModel.postAuthCode(navController)
                     navController.navigate(NavRoute.Register.route)
                 }
             },

@@ -45,9 +45,6 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
     var username by remember {
         mutableStateOf("")
     }
-    val mobileNumber by remember {
-        mutableStateOf("+79999999999")
-    }
     
     Scaffold(
         content = { paddingValues ->
@@ -96,7 +93,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                         ) {
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                value = mobileNumber,
+                                value = viewModel.mobileNumber,
                                 onValueChange = {},
                                 label = {
                                     Text(
