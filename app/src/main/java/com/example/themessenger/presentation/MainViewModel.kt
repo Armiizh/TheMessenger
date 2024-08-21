@@ -9,6 +9,7 @@ import androidx.navigation.NavHostController
 import com.example.themessenger.data.api.Api
 import com.example.themessenger.data.api.models.CheckAuthCode
 import com.example.themessenger.data.api.models.PhoneBase
+import com.example.themessenger.data.api.models.RegisterIn
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var mobileNumber: String = ""
     private var authCode: String = ""
+    var name: String = ""
+    private var username: String = ""
 
     fun setMobileNumber(mobileNumber: String) {
         this.mobileNumber = mobileNumber
@@ -32,6 +35,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun getMobileNumber(): String {
         return mobileNumber
     }
+
+    fun setUserName(username: String) {
+        this.username = username
+    }
+    fun getUserName(): String {
+        return username
+    }
+
     fun setAuthCode(authCode: String) {
         this.authCode = authCode
     }
@@ -109,9 +120,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun register(navController: NavHostController) {
+        scope.launch {
+            try {
+                val response = api.register(
+                    RegisterIn(
+                        phone = mobileNumber,
+                        name = name,
+                        username = username
+                    )
+                )
+                if (response.isSuccessful) {
+                    Log.d("Check", "Успешный ответ: ${response.body()}")
+                    withContext(Dispatchers.Main) {
+                        navController.navigate(NavRoute.Chats.route)
+                    }
+                } else {
+                    Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Check", "Ошибка: $e")
+            }
+        }
+    }
+
 
     @Suppress("UNCHECKED_CAST")
-    class MainViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class MainViewModelFactory(private val application: Application) :
+        ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 return MainViewModel(application = application) as T

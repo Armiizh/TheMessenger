@@ -1,5 +1,6 @@
 package com.example.themessenger.presentation.screens.register
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -8,17 +9,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,18 +46,23 @@ import androidx.navigation.NavHostController
 import com.example.themessenger.R
 import com.example.themessenger.presentation.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
 
-    var name by remember {
-        mutableStateOf("")
+    var name by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var usernameError by remember { mutableStateOf("") }
+    val usernameRegex = Regex("^[A-Za-z0-9-_]{1,}$")
+
+    fun validateUsername(username: String): Boolean {
+        return usernameRegex.matches(username)
     }
-    var username by remember {
-        mutableStateOf("")
-    }
-    
+
     Scaffold(
         content = { paddingValues ->
             Image(
@@ -61,20 +78,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                     .padding(horizontal = 36.dp)
                     .padding(top = 72.dp),
             ) {
-                Text(
-                    text = "Привет!",
-                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
-                    fontSize = 36.sp,
-                    lineHeight = 36.sp
-                )
-                Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    text = "Cоздай свой аккаунт",
-                    fontFamily = FontFamily(Font(R.font.roboto_light)),
-                    fontSize = 16.sp,
-                    lineHeight = 16.sp
-                )
-
+                Texts()
                 Column(
                     modifier = Modifier.padding(top = 100.dp)
                 ) {
@@ -91,27 +95,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                         Column(
                             modifier = Modifier.padding(8.dp)
                         ) {
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                value = viewModel.getMobileNumber(),
-                                onValueChange = {},
-                                label = {
-                                    Text(
-                                        text = "Ваш номер",
-                                        fontFamily = FontFamily(Font(R.font.roboto_regular))
-                                    )
-                                },
-                                colors = TextFieldDefaults.textFieldColors(
-                                    containerColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    errorIndicatorColor = Color.Transparent,
-                                ),
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    fontFamily = FontFamily(Font(R.font.roboto_regular))
-                                ),
-                                readOnly = true
-                            )
+                            Number(viewModel)
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 value = name,
@@ -139,6 +123,11 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                                 value = username,
                                 onValueChange = {
                                     username = it
+                                    if (!validateUsername(it)) {
+                                        usernameError = "Недопустимый символ в имени пользователя"
+                                    } else {
+                                        usernameError = ""
+                                    }
                                 },
                                 label = {
                                     Text(
@@ -156,28 +145,86 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                                     fontFamily = FontFamily(Font(R.font.roboto_regular))
                                 )
                             )
-                            ElevatedButton(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp),
-                                onClick = { navController.navigate(NavRoute.Chats.route) },
-                                shape = RoundedCornerShape(10.dp),
-                                enabled = name.isNotEmpty() && username.isNotEmpty(),
-                                colors = ButtonDefaults.elevatedButtonColors(
-                                    containerColor = Color.Black,
-                                    contentColor = Color.White
-                                ),
-                                elevation = ButtonDefaults.buttonElevation(16.dp)
-                            ) {
-                                Text(
-                                    text = "Войти или зарегистрироваться",
-                                    fontFamily = FontFamily(Font(R.font.roboto_regular))
-                                )
-                            }
+                            Button(viewModel, name, username, navController)
                         }
                     }
                 }
             }
         }
+    )
+}
+
+@Composable
+private fun Button(
+    viewModel: MainViewModel,
+    name: String,
+    username: String,
+    navController: NavHostController
+) {
+    ElevatedButton(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        onClick = {
+            viewModel.name = name
+            viewModel.setUserName(username)
+            Log.d("Check", "name is ${viewModel.name}")
+            viewModel.register(navController)
+        },
+        shape = RoundedCornerShape(10.dp),
+        enabled = name.isNotEmpty() && username.isNotEmpty(),
+        colors = ButtonDefaults.elevatedButtonColors(
+            containerColor = Color.Black,
+            contentColor = Color.White
+        ),
+        elevation = ButtonDefaults.buttonElevation(16.dp)
+    ) {
+        Text(
+            text = "Войти или зарегистрироваться",
+            fontFamily = FontFamily(Font(R.font.roboto_regular))
+        )
+    }
+}
+
+@Composable
+private fun Texts() {
+    Text(
+        text = "Привет!",
+        fontFamily = FontFamily(Font(R.font.roboto_medium)),
+        fontSize = 36.sp,
+        lineHeight = 36.sp
+    )
+    Text(
+        modifier = Modifier.padding(top = 8.dp),
+        text = "Cоздай свой аккаунт",
+        fontFamily = FontFamily(Font(R.font.roboto_light)),
+        fontSize = 16.sp,
+        lineHeight = 16.sp
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Number(viewModel: MainViewModel) {
+    OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
+        value = viewModel.getMobileNumber(),
+        onValueChange = {},
+        label = {
+            Text(
+                text = "Ваш номер",
+                fontFamily = FontFamily(Font(R.font.roboto_regular))
+            )
+        },
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            errorIndicatorColor = Color.Transparent,
+        ),
+        singleLine = true,
+        textStyle = TextStyle(
+            fontFamily = FontFamily(Font(R.font.roboto_regular))
+        ),
+        readOnly = true
     )
 }
