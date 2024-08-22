@@ -76,4 +76,5 @@ dependencies {
     implementation (libs.logging.interceptor)
     implementation (libs.androidx.runtime.livedata)
 
+    implementation(libs.picasso)
 }

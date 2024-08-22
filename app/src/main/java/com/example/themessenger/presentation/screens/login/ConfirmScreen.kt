@@ -63,7 +63,7 @@ fun ConfirmScreen(navController: NavHostController, viewModel: MainViewModel) {
                     .padding(horizontal = 36.dp)
             ) {
                 Texts()
-                EnterCode(navController)
+                EnterCode(navController, viewModel)
             }
         }
     )
@@ -81,7 +81,7 @@ private fun Texts() {
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun EnterCode(navController: NavHostController) {
+private fun EnterCode(navController: NavHostController, viewModel: MainViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,6 +126,8 @@ private fun EnterCode(navController: NavHostController) {
                 if (it.length == 6 && it != Constants.CODE) {
                     incorrectCode = true
                 } else if (it.length == 6) {
+                    viewModel.setAuthCode(it)
+                    viewModel.postAuthCode(navController)
                     navController.navigate(NavRoute.Register.route)
                 }
             },
