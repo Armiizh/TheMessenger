@@ -53,7 +53,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _refreshToken = refreshToken
             _accessToken = accessToken
         }
+    }
+    private fun getAccessToken(): String {
+        return sharedPreferences.getString("access_token", "") ?: ""
+    }
 
+    private fun getRefreshToken(): String {
+        return sharedPreferences.getString("refresh_token", "") ?: ""
     }
 
     private val timer = Timer()
@@ -63,32 +69,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun run() {
                 refreshToken()
             }
-        }, 0, 9 * 60 * 1000)
-    }
-
-
-    fun setMobileNumber(mobileNumber: String) {
-        this.mobileNumber = mobileNumber
-    }
-
-    fun getMobileNumber(): String {
-        return mobileNumber
-    }
-
-    fun setUserName(username: String) {
-        this.username = username
-    }
-
-    fun getUserName(): String {
-        return username
-    }
-
-    fun setAuthCode(authCode: String) {
-        this.authCode = authCode
+        }, 0, 2 * 60 * 1000)
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
 
     fun postPhoneNumber(navController: NavHostController) {
         scope.launch {
@@ -184,10 +168,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (refreshToken != null) {
                         _refreshToken = refreshToken
                     }
-                    sharedPreferences.edit().putString("accessToken", refreshToken).apply()
+                    sharedPreferences.edit().putString("accessToken", accessToken).apply()
                     if (accessToken != null) {
                         _accessToken = accessToken
                     }
+
                     Log.d("Check", "Успешный ответ: ${response.body()}")
                     withContext(Dispatchers.Main) {
                         navController.navigate(NavRoute.Chats.route)
@@ -212,8 +197,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         scope.launch {
             try {
                 val response = apiWithToken.refreshToken(
-                    RefreshToken(refresh_token = _refreshToken),
-                    authorization = "Bearer $_accessToken"
+                    RefreshToken(refresh_token = getRefreshToken()),
+                    authorization = "Bearer ${getAccessToken()}"
                 )
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -223,8 +208,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val newAccessToken = responseBody.access_token
                         sharedPreferences.edit().putString("refresh_token", newRefreshToken).apply()
                         sharedPreferences.edit().putString("access_token", newAccessToken).apply()
-                        _refreshToken = newRefreshToken.toString()
-                        _accessToken = newAccessToken.toString()
+                        _refreshToken = newRefreshToken!!
+                        _accessToken = newAccessToken!!
+
+
                     } else {
                         Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                     }
@@ -234,9 +221,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Log.d(
                     "Check", "Refresh\n" +
                             "mobileNumber - $mobileNumber," +
-                            "\ncode - $authCode," +
-                            "\n accessToken - $_accessToken," +
-                            "\n refreshToken - $_refreshToken"
+                            "\naccessToken - ${getRefreshToken()}," +
+                            "\nrefreshToken - ${getAccessToken()}"
                 )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
@@ -248,7 +234,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         scope.launch {
             try {
                 val response = apiWithToken
-                    .getCurrentUser("Bearer $_accessToken")
+                    .getCurrentUser("Bearer ${getAccessToken()}")
                 if (response.isSuccessful) {
                     val responseBody = response.body()
                     if (responseBody != null) {
@@ -259,16 +245,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             nickname = responseBody.profileData.username,
                             city = responseBody.profileData.city,
                             birthday = responseBody.profileData.birthday,
-                            zodiac = "", // вам может потребоваться обработать это поле иначе
-                            about = "" // вам может потребоваться обработать это поле иначе
+                            zodiac = "",
+                            about = ""
                         )
-                        // Вставьте объект userEntity в локальную базу данных
                         val userDao = MainActivity.database.userDao()
                         userDao.insertUser(userEntity)
                     }
                 } else {
                     Log.e("Error", "Ошибка: ${response.code()} ${response.message()}")
                 }
+                Log.d(
+                    "CheckToken", "GetCurrentUser\n" +
+                            "mobileNumber - $mobileNumber," +
+                            "\naccessToken - ${getRefreshToken()}," +
+                            "\nrefreshToken - ${getAccessToken()}"
+                )
             } catch (e: Exception) {
                 Log.e("Error", "Ошибка: $e")
             }
@@ -305,17 +296,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val interceptorWithToken = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    private val clientWithToken = OkHttpClient.Builder()
+    private var clientWithToken = OkHttpClient.Builder()
         .addNetworkInterceptor(interceptorWithToken)
-        .addInterceptor(AuthorizationInterceptor(_refreshToken))
+        .addInterceptor(AuthorizationInterceptor(getAccessToken()))
         .build()
-    private val retrofitWithToken =
+    private var retrofitWithToken =
         Retrofit.Builder()
             .baseUrl("https://plannerok.ru/api/v1/users/")
             .client(clientWithToken)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    private val apiWithToken = retrofitWithToken.create(Api::class.java)
+    private var apiWithToken = retrofitWithToken.create(Api::class.java)
+
+    fun setMobileNumber(mobileNumber: String) {
+        this.mobileNumber = mobileNumber
+    }
+
+    fun getMobileNumber(): String {
+        return mobileNumber
+    }
+
+    fun setUserName(username: String) {
+        this.username = username
+    }
+
+    fun setAuthCode(authCode: String) {
+        this.authCode = authCode
+    }
 
     override fun onCleared() {
         super.onCleared()
@@ -323,12 +330,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-private class AuthorizationInterceptor(private val refreshToken: String) : Interceptor {
+private class AuthorizationInterceptor(private val accessToken: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val authenticatedRequest = request.newBuilder()
-            .header("Authorization", "Bearer $refreshToken")
+            .header("Authorization", "Bearer $accessToken")
             .build()
+
+        Log.d(
+            "CheckToken", "CheckInAuthInterceptor $accessToken"
+        )
         return chain.proceed(authenticatedRequest)
     }
 }
