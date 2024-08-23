@@ -8,11 +8,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavHostController
+import com.example.themessenger.MainActivity
 import com.example.themessenger.data.api.Api
 import com.example.themessenger.data.api.models.CheckAuthCode
 import com.example.themessenger.data.api.models.PhoneBase
 import com.example.themessenger.data.api.models.RefreshToken
 import com.example.themessenger.data.api.models.RegisterIn
+import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var name: String = ""
     private var username: String = ""
 
+
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
@@ -50,6 +53,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _refreshToken = refreshToken
             _accessToken = accessToken
         }
+
     }
 
     private val timer = Timer()
@@ -102,6 +106,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
+                Log.d(
+                    "Check", "postPhone\n" +
+                            "mobileNumber - $mobileNumber," +
+                            "\ncode - $authCode," +
+                            "\n accessToken - $_accessToken," +
+                            "\n refreshToken - $_refreshToken"
+                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
@@ -142,6 +153,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
+                Log.d(
+                    "Check", "postCode\n" +
+                            "mobileNumber - $mobileNumber," +
+                            "\ncode - $authCode," +
+                            "\n accessToken - $_accessToken," +
+                            "\n refreshToken - $_refreshToken"
+                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
@@ -160,11 +178,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 if (response.isSuccessful) {
                     val responseBody = response.body()
-                    // Храним refreshToken в shared preferences
                     val refreshToken = responseBody?.refresh_token
+                    val accessToken = responseBody?.access_token
                     sharedPreferences.edit().putString("refresh_token", refreshToken).apply()
                     if (refreshToken != null) {
                         _refreshToken = refreshToken
+                    }
+                    sharedPreferences.edit().putString("accessToken", refreshToken).apply()
+                    if (accessToken != null) {
+                        _accessToken = accessToken
                     }
                     Log.d("Check", "Успешный ответ: ${response.body()}")
                     withContext(Dispatchers.Main) {
@@ -173,6 +195,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
+                Log.d(
+                    "Check", "Register\n" +
+                            "mobileNumber - $mobileNumber," +
+                            "\ncode - $authCode," +
+                            "\n accessToken - $_accessToken," +
+                            "\n refreshToken - $_refreshToken"
+                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
@@ -194,18 +223,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         val newAccessToken = responseBody.access_token
                         sharedPreferences.edit().putString("refresh_token", newRefreshToken).apply()
                         sharedPreferences.edit().putString("access_token", newAccessToken).apply()
-                        if (newRefreshToken != null) {
-                            _refreshToken = newRefreshToken
-                        }
-                        if (newAccessToken != null) {
-                            _accessToken = newAccessToken
-                        }
+                        _refreshToken = newRefreshToken.toString()
+                        _accessToken = newAccessToken.toString()
                     } else {
                         Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                     }
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
+                Log.d(
+                    "Check", "Refresh\n" +
+                            "mobileNumber - $mobileNumber," +
+                            "\ncode - $authCode," +
+                            "\n accessToken - $_accessToken," +
+                            "\n refreshToken - $_refreshToken"
+                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
@@ -215,10 +247,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun getCurrentUser() {
         scope.launch {
             try {
-                val response = apiWithToken.getCurrentUser("Bearer $_accessToken")
+                val response = apiWithToken
+                    .getCurrentUser("Bearer $_accessToken")
                 if (response.isSuccessful) {
-                    val user = response.body()
-
+                    val responseBody = response.body()
+                    if (responseBody != null) {
+                        val userEntity = UserEntity(
+                            id = responseBody.profileData.id,
+                            avatar = responseBody.profileData.avatar,
+                            phone = responseBody.profileData.phone,
+                            nickname = responseBody.profileData.username,
+                            city = responseBody.profileData.city,
+                            birthday = responseBody.profileData.birthday,
+                            zodiac = "", // вам может потребоваться обработать это поле иначе
+                            about = "" // вам может потребоваться обработать это поле иначе
+                        )
+                        // Вставьте объект userEntity в локальную базу данных
+                        val userDao = MainActivity.database.userDao()
+                        userDao.insertUser(userEntity)
+                    }
                 } else {
                     Log.e("Error", "Ошибка: ${response.code()} ${response.message()}")
                 }
@@ -238,9 +285,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             throw IllegalArgumentException("Unknown ViewModel Class")
         }
     }
-
-
-
 
     //Api Without Header
     private val interceptorWithoutToken = HttpLoggingInterceptor().apply {
@@ -277,8 +321,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         scope.cancel()
     }
-
 }
+
 private class AuthorizationInterceptor(private val refreshToken: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()

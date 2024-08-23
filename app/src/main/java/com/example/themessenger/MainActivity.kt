@@ -10,9 +10,16 @@ import com.example.themessenger.presentation.navigation.NavHostMessenger
 import com.example.themessenger.presentation.ui.theme.TheMessengerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
+import com.example.themessenger.data.room.AppDatabase
 import com.example.themessenger.presentation.MainViewModel
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        lateinit var database: AppDatabase
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -22,8 +29,12 @@ class MainActivity : ComponentActivity() {
                 val mViewModel: MainViewModel =
                     viewModel(factory = MainViewModel.MainViewModelFactory(context.applicationContext as Application))
                 val navController = rememberNavController()
+                database = Room.databaseBuilder(
+                    applicationContext,
+                    AppDatabase::class.java,
+                    "my_database"
+                ).build()
                 NavHostMessenger(mViewModel, navController)
-
             }
         }
     }

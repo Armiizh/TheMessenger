@@ -114,7 +114,8 @@ fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
                         navController,
                         menuItems1,
                         snackbarHostState,
-                        menuItems2
+                        menuItems2,
+                        viewModel
                     )
                 }
             )
@@ -128,14 +129,15 @@ private fun DrawerContent(
     navController: NavHostController,
     menuItems1: List<MenuItem>,
     snackbarHostState: SnackbarHostState,
-    menuItems2: List<MenuItem>
+    menuItems2: List<MenuItem>,
+    viewModel: MainViewModel
 ) {
     Column(
         modifier = Modifier
             .padding(paddingValues)
             .background(color = colorResource(id = R.color.TopAppBarColor))
     ) {
-        MyProfile(navController)
+        MyProfile(navController, viewModel)
         DrawerItem(menuItem = menuItems1, snackbarHostState)
         DrawerItem(menuItem = menuItems2, snackbarHostState)
         Spacer(modifier = Modifier.weight(1f))
@@ -245,7 +247,7 @@ private fun ChatTopAppBar(
 }
 
 @Composable
-private fun MyProfile(navController: NavHostController) {
+private fun MyProfile(navController: NavHostController, viewModel: MainViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -255,7 +257,10 @@ private fun MyProfile(navController: NavHostController) {
                 color = colorResource(id = R.color.DrawerContent),
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable { navController.navigate(NavRoute.Profile.route) },
+            .clickable {
+                viewModel.getCurrentUser()
+                navController.navigate(NavRoute.Profile.route)
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
