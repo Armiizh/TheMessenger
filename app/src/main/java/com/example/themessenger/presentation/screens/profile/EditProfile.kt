@@ -26,8 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,7 +53,7 @@ import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.presentation.navigation.NavRoute
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
+fun EditProfile(navController: NavHostController) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val userIdString = sharedPreferences.getString("user_id", "")
@@ -84,8 +84,8 @@ fun ProfileScreen(navController: NavHostController) {
     )
 }
 
-@Composable
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun TopAppBar(navController: NavHostController) {
 
     TopAppBar(
@@ -99,7 +99,7 @@ private fun TopAppBar(navController: NavHostController) {
                 Row(
                     modifier = Modifier
                         .clickable {
-                            navController.navigate(NavRoute.Chats.route)
+                            navController.navigate(NavRoute.Profile.route)
                         },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -107,26 +107,23 @@ private fun TopAppBar(navController: NavHostController) {
                         painter = painterResource(id = R.drawable.left_arrow),
                         contentDescription = "",
                     )
-                    Text(
-                        text = "Чаты",
-                        fontSize = 16.sp,
-                        fontFamily = FontFamily(Font(R.font.roboto_medium))
-                    )
                 }
-                Spacer(modifier = Modifier.weight(0.5f))
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "Профиль",
+                    text = "Изменить",
                     fontSize = 30.sp,
                     fontFamily = FontFamily(Font(R.font.roboto_bold)),
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = "",
+                Spacer(modifier = Modifier.weight(0.8f))
+                Text(
                     modifier = Modifier
                         .padding(end = 16.dp)
-                        .clickable { navController.navigate(NavRoute.EditProfile.route)}
+                        .clickable { navController.navigate(NavRoute.Profile.route) },
+                    text = "Готово",
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily(Font(R.font.roboto_medium))
                 )
+
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -180,22 +177,22 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    ProfileItem("Имя", userEntity?.name ?: "Добавьте информацию")
+                    EditProfileItem("Имя", userEntity?.name ?: "Добавьте информацию")
                 }
                 item {
-                    ProfileItem("Никнейм", userEntity?.username ?: "Добавьте информацию")
+                    EditProfileItem("Никнейм", userEntity?.username ?: "Добавьте информацию")
                 }
                 item {
-                    ProfileItem("Город", userEntity?.city ?: "Добавьте информацию")
+                    EditProfileItem("Город", userEntity?.city ?: "Добавьте информацию")
                 }
                 item {
-                    ProfileItem("Дата рождения", userEntity?.birthday ?: "Добавьте информацию")
+                    EditProfileItem("Дата рождения", userEntity?.birthday ?: "Добавьте информацию")
                 }
                 item {
-                    ProfileItem("Знак зодиака", userEntity?.zodiacSign ?: "Добавьте информацию")
+                    EditProfileItem("Знак зодиака", userEntity?.zodiacSign ?: "Добавьте информацию")
                 }
                 item {
-                    ProfileItem("О себе", userEntity?.status ?: "Добавьте информацию")
+                    EditProfileItem("О себе", userEntity?.status ?: "Добавьте информацию")
                 }
             }
         }
@@ -203,13 +200,15 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
 }
 
 @Composable
-fun ProfileItem(
+fun EditProfileItem(
     title: String,
     description: String,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
             Text(
@@ -232,5 +231,10 @@ fun ProfileItem(
                 color = Color.LightGray
             )
         }
+        Icon(
+            painter = painterResource(id = R.drawable.right_arrow),
+            contentDescription = "",
+            tint = Color.Black
+        )
     }
 }

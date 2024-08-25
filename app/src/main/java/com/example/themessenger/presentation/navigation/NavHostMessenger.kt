@@ -9,6 +9,7 @@ import com.example.themessenger.presentation.screens.chats.ChatScreen
 import com.example.themessenger.presentation.screens.chats.ChatsScreen
 import com.example.themessenger.presentation.screens.login.ConfirmScreen
 import com.example.themessenger.presentation.screens.login.LoginScreen
+import com.example.themessenger.presentation.screens.profile.EditProfile
 import com.example.themessenger.presentation.screens.profile.ProfileScreen
 
 import com.example.themessenger.presentation.screens.register.RegisterScreen
@@ -53,6 +54,11 @@ fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController
                 navController = navController
             )
         }
+        composable(NavRoute.EditProfile.route) {
+            EditProfile(
+                navController = navController
+            )
+        }
     }
 }
 
@@ -63,4 +69,5 @@ sealed class NavRoute(val route: String) {
     data object Chats: NavRoute(Constants.Screens.CHATS_SCREEN)
     data object Chat: NavRoute(Constants.Screens.CHAT_SCREEN)
     data object Profile: NavRoute(Constants.Screens.PROFILE_SCREEN)
+    data object EditProfile: NavRoute(Constants.Screens.EDIT_PROFILE_SCREEN)
 }

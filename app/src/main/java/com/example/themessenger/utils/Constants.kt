@@ -2,8 +2,6 @@ package com.example.themessenger.utils
 
 object Constants {
 
-    const val MESSENGER_USER_TABLE = "messenger_user_table"
-    const val MESSENGER_DATABASE = "messenger_database"
     const val CODE = "133337"
 
     object Screens {
@@ -13,5 +11,6 @@ object Constants {
         const val CHATS_SCREEN = "chats_screen"
         const val CHAT_SCREEN = "chat_screen"
         const val PROFILE_SCREEN = "profile_screen"
+        const val EDIT_PROFILE_SCREEN = "edit_profile_screen"
     }
 }
