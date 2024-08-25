@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +53,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.R
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.CoroutineScope
@@ -137,7 +138,7 @@ private fun DrawerContent(
             .padding(paddingValues)
             .background(color = colorResource(id = R.color.TopAppBarColor))
     ) {
-        MyProfile(navController, viewModel)
+        MyProfile(navController)
         DrawerItem(menuItem = menuItems1, snackbarHostState)
         DrawerItem(menuItem = menuItems2, snackbarHostState)
         Spacer(modifier = Modifier.weight(1f))
@@ -150,7 +151,10 @@ private fun DrawerContent(
                 contentColor = colorResource(id = R.color.white)
             ),
             shape = RoundedCornerShape(8.dp),
-            onClick = { navController.navigate(NavRoute.Login.route) }) {
+            onClick = {
+                navController.navigate(NavRoute.Login.route)
+                viewModel.logout()
+            }) {
             Text(
                 text = "Выйти",
                 fontFamily = FontFamily(Font(R.font.roboto_light))
@@ -247,7 +251,7 @@ private fun ChatTopAppBar(
 }
 
 @Composable
-private fun MyProfile(navController: NavHostController, viewModel: MainViewModel) {
+private fun MyProfile(navController: NavHostController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,7 +262,6 @@ private fun MyProfile(navController: NavHostController, viewModel: MainViewModel
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable {
-                viewModel.getCurrentUser()
                 navController.navigate(NavRoute.Profile.route)
             },
         verticalAlignment = Alignment.CenterVertically

@@ -1,18 +1,17 @@
-package com.example.themessenger
+package com.example.themessenger.presentation
 
-import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.platform.LocalContext
-import com.example.themessenger.presentation.navigation.NavHostMessenger
-import com.example.themessenger.presentation.ui.theme.TheMessengerTheme
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.example.themessenger.data.room.AppDatabase
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
+import com.example.themessenger.presentation.navigation.NavHostMessenger
+
+import com.example.themessenger.presentation.ui.theme.TheMessengerTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -25,17 +24,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TheMessengerTheme {
-                val context = LocalContext.current
-                val mViewModel: MainViewModel =
-                    viewModel(factory = MainViewModel.MainViewModelFactory(context.applicationContext as Application))
-                val navController = rememberNavController()
                 database = Room.databaseBuilder(
                     applicationContext,
                     AppDatabase::class.java,
                     "my_database"
                 ).build()
-                NavHostMessenger(mViewModel, navController)
+
+                val viewModel = MainViewModel(application)
+
+                val navController = rememberNavController()
+
+
+                NavHostMessenger(viewModel, navController)
             }
         }
+    }
+
+    override fun onDestroy() {
+        val sharedPreferences = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().clear().apply()
+        super.onDestroy()
     }
 }

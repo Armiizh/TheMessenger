@@ -1,25 +1,22 @@
-package com.example.themessenger.presentation
+package com.example.themessenger.domain
 
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import com.example.themessenger.MainActivity
+import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.data.api.Api
 import com.example.themessenger.data.api.models.CheckAuthCode
 import com.example.themessenger.data.api.models.PhoneBase
 import com.example.themessenger.data.api.models.RefreshToken
 import com.example.themessenger.data.api.models.RegisterIn
+import com.example.themessenger.data.room.model.Avatars
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.presentation.navigation.NavRoute
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
@@ -31,30 +28,20 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Timer
 import java.util.TimerTask
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+class MainViewModel(private val application: Application): ViewModel() {
 
     private var mobileNumber: String = ""
     private var authCode: String = ""
     var name: String = ""
     private var username: String = ""
 
+    private var accessToken: String? = null
+    private var refreshToken: String? = null
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
-    private var _refreshToken: String = ""
-    private var _accessToken: String = ""
-
-
-    init {
-        val refreshToken = sharedPreferences.getString("refresh_token", "")
-        val accessToken = sharedPreferences.getString("accessToken", "")
-        if (refreshToken != null && accessToken != null) {
-            _refreshToken = refreshToken
-            _accessToken = accessToken
-        }
-    }
-    private fun getAccessToken(): String {
+    fun getAccessToken(): String {
         return sharedPreferences.getString("access_token", "") ?: ""
     }
 
@@ -65,17 +52,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val timer = Timer()
 
     init {
+        accessToken = sharedPreferences.getString("access_token", "") ?: ""
+        refreshToken = sharedPreferences.getString("refresh_token", "") ?: ""
+
         timer.schedule(object : TimerTask() {
             override fun run() {
                 refreshToken()
             }
-        }, 0, 2 * 60 * 1000)
+        }, 0, 9 * 60 * 1000)
     }
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun postPhoneNumber(navController: NavHostController) {
-        scope.launch {
+        viewModelScope.launch {
             try {
                 val response = apiWithoutToken.sendPhoneNumber(
                     PhoneBase(
@@ -90,22 +79,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
-                Log.d(
-                    "Check", "postPhone\n" +
-                            "mobileNumber - $mobileNumber," +
-                            "\ncode - $authCode," +
-                            "\n accessToken - $_accessToken," +
-                            "\n refreshToken - $_refreshToken"
-                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
         }
-
     }
 
-    fun postAuthCode(navController: NavHostController) {
-        scope.launch {
+    fun checkAuthCode(navController: NavHostController) {
+        viewModelScope.launch {
             try {
                 val response = apiWithoutToken.checkAuthCode(
                     CheckAuthCode(
@@ -114,14 +95,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
                 if (response.isSuccessful) {
-                    val responseBody = response.body()
                     Log.d("Check", "Успешный ответ: ${response.body()}")
+                    val responseBody = response.body()
                     if (responseBody != null) {
                         val refreshToken = responseBody.refresh_token
+                        val accessToken = responseBody.access_token
+                        val userId = responseBody.user_id
                         sharedPreferences.edit().putString("refresh_token", refreshToken).apply()
-                        if (refreshToken != null) {
-                            _refreshToken = refreshToken
-                        }
+                        sharedPreferences.edit().putString("access_token", accessToken).apply()
+                        sharedPreferences.edit().putString("user_id", userId.toString()).apply()
                         if (!responseBody.is_user_exists!!) {
                             withContext(Dispatchers.Main) {
                                 navController.navigate(NavRoute.Register.route)
@@ -129,6 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         } else {
                             withContext(Dispatchers.Main) {
                                 navController.navigate(NavRoute.Chats.route)
+                                getCurrentUser()
                             }
                         }
                     } else {
@@ -137,13 +120,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
-                Log.d(
-                    "Check", "postCode\n" +
-                            "mobileNumber - $mobileNumber," +
-                            "\ncode - $authCode," +
-                            "\n accessToken - $_accessToken," +
-                            "\n refreshToken - $_refreshToken"
-                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
@@ -151,7 +127,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun register(navController: NavHostController) {
-        scope.launch {
+        viewModelScope.launch {
             try {
                 val response = apiWithoutToken.register(
                     RegisterIn(
@@ -161,44 +137,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
                 if (response.isSuccessful) {
+                    Log.d("Check", "responseBody is null")
                     val responseBody = response.body()
-                    val refreshToken = responseBody?.refresh_token
-                    val accessToken = responseBody?.access_token
-                    sharedPreferences.edit().putString("refresh_token", refreshToken).apply()
-                    if (refreshToken != null) {
-                        _refreshToken = refreshToken
-                    }
-                    sharedPreferences.edit().putString("accessToken", accessToken).apply()
-                    if (accessToken != null) {
-                        _accessToken = accessToken
-                    }
-
-                    Log.d("Check", "Успешный ответ: ${response.body()}")
-                    withContext(Dispatchers.Main) {
-                        navController.navigate(NavRoute.Chats.route)
+                    if (responseBody != null) {
+                        val refreshToken = responseBody.refresh_token
+                        val accessToken = responseBody.access_token
+                        val userId = responseBody.user_id
+                        sharedPreferences.edit().putString("refresh_token", refreshToken).apply()
+                        sharedPreferences.edit().putString("access_token", accessToken).apply()
+                        sharedPreferences.edit().putString("user_id", userId.toString()).apply()
+                        Log.d("Check", "Успешный ответ: ${response.body()}")
+                        withContext(Dispatchers.Main) {
+                            navController.navigate(NavRoute.Chats.route)
+                            getCurrentUser()
+                        }
                     }
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
-                Log.d(
-                    "Check", "Register\n" +
-                            "mobileNumber - $mobileNumber," +
-                            "\ncode - $authCode," +
-                            "\n accessToken - $_accessToken," +
-                            "\n refreshToken - $_refreshToken"
-                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
         }
     }
 
-    fun refreshToken() {
-        scope.launch {
+    private fun refreshToken() {
+        viewModelScope.launch {
             try {
                 val response = apiWithToken.refreshToken(
-                    RefreshToken(refresh_token = getRefreshToken()),
-                    authorization = "Bearer ${getAccessToken()}"
+                    RefreshToken(refresh_token = refreshToken!!)
                 )
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -206,74 +173,81 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (responseBody != null) {
                         val newRefreshToken = responseBody.refresh_token
                         val newAccessToken = responseBody.access_token
+                        accessToken = newAccessToken
+                        refreshToken = newRefreshToken
                         sharedPreferences.edit().putString("refresh_token", newRefreshToken).apply()
                         sharedPreferences.edit().putString("access_token", newAccessToken).apply()
-                        _refreshToken = newRefreshToken!!
-                        _accessToken = newAccessToken!!
-
-
+                        getCurrentUser()
                     } else {
                         Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                     }
                 } else {
                     Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
                 }
-                Log.d(
-                    "Check", "Refresh\n" +
-                            "mobileNumber - $mobileNumber," +
-                            "\naccessToken - ${getRefreshToken()}," +
-                            "\nrefreshToken - ${getAccessToken()}"
-                )
             } catch (e: Exception) {
                 Log.e("Check", "Ошибка: $e")
             }
         }
     }
 
-    fun getCurrentUser() {
-        scope.launch {
+    private fun getCurrentUser() {
+        viewModelScope.launch {
             try {
-                val response = apiWithToken
-                    .getCurrentUser("Bearer ${getAccessToken()}")
+                val response = apiWithToken.getCurrentUser()
                 if (response.isSuccessful) {
                     val responseBody = response.body()
                     if (responseBody != null) {
-                        val userEntity = UserEntity(
-                            id = responseBody.profileData.id,
-                            avatar = responseBody.profileData.avatar,
-                            phone = responseBody.profileData.phone,
-                            nickname = responseBody.profileData.username,
-                            city = responseBody.profileData.city,
-                            birthday = responseBody.profileData.birthday,
-                            zodiac = "",
-                            about = ""
-                        )
+                        val user = responseBody.profileData
                         val userDao = MainActivity.database.userDao()
+                        val apiAvatars = user.avatars
+                        var roomAvatars: Avatars? = null
+                        if (apiAvatars != null) {
+                            roomAvatars = Avatars(
+                                avatar = apiAvatars.avatar,
+                                bigAvatar = apiAvatars.bigAvatar,
+                                miniAvatar = apiAvatars.miniAvatar
+                            )
+                        } else {
+                            roomAvatars = Avatars(
+                                avatar = "",
+                                bigAvatar = "",
+                                miniAvatar = ""
+                            )
+                        }
+                        val userEntity = UserEntity(
+                            name = user.name,
+                            birthday = user.birthday,
+                            city = user.city,
+                            vk = user.vk,
+                            instagram = user.instagram,
+                            status = user.status,
+                            avatar = user.avatar,
+                            id = user.id,
+                            last = user.last,
+                            online = user.online,
+                            created = user.created,
+                            phone = user.phone,
+                            completedTask = user.completedTask,
+                            avatars = roomAvatars,
+                            zodiacSign = if (user.birthday != "") {
+                                determineZodiacSign(user.birthday.toString())
+                            } else {
+                                ""
+                            }
+                        )
+
+                        Log.d("CHECK", "${userEntity.phone}")
                         userDao.insertUser(userEntity)
+                        Log.d("Database", "User data inserted successfully")
+
                     }
                 } else {
                     Log.e("Error", "Ошибка: ${response.code()} ${response.message()}")
                 }
-                Log.d(
-                    "CheckToken", "GetCurrentUser\n" +
-                            "mobileNumber - $mobileNumber," +
-                            "\naccessToken - ${getRefreshToken()}," +
-                            "\nrefreshToken - ${getAccessToken()}"
-                )
+                Log.d("CheckToken", "JWT: ${getAccessToken()}")
             } catch (e: Exception) {
                 Log.e("Error", "Ошибка: $e")
             }
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    class MainViewModelFactory(private val application: Application) :
-        ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
-                return MainViewModel(application = application) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel Class")
         }
     }
 
@@ -298,7 +272,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     private var clientWithToken = OkHttpClient.Builder()
         .addNetworkInterceptor(interceptorWithToken)
-        .addInterceptor(AuthorizationInterceptor(getAccessToken()))
+        .addInterceptor(AuthorizationInterceptor(this))
         .build()
     private var retrofitWithToken =
         Retrofit.Builder()
@@ -324,22 +298,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         this.authCode = authCode
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        scope.cancel()
+
+    fun logout() {
+        sharedPreferences.edit().clear().apply()
+    }
+
+    private fun determineZodiacSign(birthDate: String): String {
+        if (birthDate.isEmpty() || birthDate == null) {
+            return "Неизвестный знак зодиака"
+        }
+        val parts = birthDate.split("-")
+        if (parts.size != 3) {
+            return "Неизвестный знак зодиака"
+        }
+        val year = parts[0]
+        val month = parts[1]
+        val day = parts[2]
+        val monthInt = month.toInt()
+        val dayInt = day.toInt()
+        return when (monthInt) {
+            1 -> if (dayInt >= 20) "Водолей" else "Козерог"
+            2 -> if (dayInt >= 19) "Рыбы" else "Водолей"
+            3 -> if (dayInt >= 21) "Овен" else "Рыбы"
+            4 -> if (dayInt >= 20) "Телец" else "Овен"
+            5 -> if (dayInt >= 21) "Близнецы" else "Телец"
+            6 -> if (dayInt >= 21) "Рак" else "Близнецы"
+            7 -> if (dayInt >= 23) "Лев" else "Рак"
+            8 -> if (dayInt >= 23) "Дева" else "Лев"
+            9 -> if (dayInt >= 23) "Весы" else "Дева"
+            10 -> if (dayInt >= 23) "Скорпион" else "Весы"
+            11 -> if (dayInt >= 22) "Стрелец" else "Скорпион"
+            12 -> if (dayInt >= 22) "Козерог" else "Стрелец"
+            else -> "Неизвестный знак зодиака"
+        }
     }
 }
-
-private class AuthorizationInterceptor(private val accessToken: String) : Interceptor {
+private class AuthorizationInterceptor(private val viewModel: MainViewModel) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
+        val accessToken = viewModel.getAccessToken()
         val authenticatedRequest = request.newBuilder()
             .header("Authorization", "Bearer $accessToken")
             .build()
 
-        Log.d(
-            "CheckToken", "CheckInAuthInterceptor $accessToken"
-        )
+        Log.d("CheckToken", "CheckInAuthInterceptor $accessToken")
         return chain.proceed(authenticatedRequest)
     }
 }

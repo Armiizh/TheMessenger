@@ -38,9 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.R
-import com.example.themessenger.presentation.navigation.NavRoute
 import com.example.themessenger.utils.Constants
 import kotlin.math.roundToInt
 
@@ -127,8 +126,7 @@ private fun EnterCode(navController: NavHostController, viewModel: MainViewModel
                     incorrectCode = true
                 } else if (it.length == 6) {
                     viewModel.setAuthCode(it)
-                    viewModel.postAuthCode(navController)
-                    navController.navigate(NavRoute.Register.route)
+                    viewModel.checkAuthCode(navController)
                 }
             },
             colors = TextFieldDefaults.textFieldColors(

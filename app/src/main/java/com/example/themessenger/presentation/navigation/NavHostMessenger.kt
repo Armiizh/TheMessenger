@@ -4,12 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.screens.chats.ChatScreen
 import com.example.themessenger.presentation.screens.chats.ChatsScreen
 import com.example.themessenger.presentation.screens.login.ConfirmScreen
 import com.example.themessenger.presentation.screens.login.LoginScreen
 import com.example.themessenger.presentation.screens.profile.ProfileScreen
+
 import com.example.themessenger.presentation.screens.register.RegisterScreen
 import com.example.themessenger.utils.Constants
 
@@ -49,8 +50,7 @@ fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController
         }
         composable(NavRoute.Profile.route) {
             ProfileScreen(
-                navController = navController,
-                viewModel = mViewModel
+                navController = navController
             )
         }
     }

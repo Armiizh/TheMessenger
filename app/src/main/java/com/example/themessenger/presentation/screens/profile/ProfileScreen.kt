@@ -1,5 +1,6 @@
 package com.example.themessenger.presentation.screens.profile
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,10 +27,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -37,18 +44,32 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.presentation.MainViewModel
 import com.example.themessenger.R
+import com.example.themessenger.data.room.model.UserEntity
+import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.presentation.navigation.NavRoute
+import com.squareup.picasso.Picasso
 
 @Composable
-fun ProfileScreen(navController: NavHostController, viewModel: MainViewModel) {
+fun ProfileScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    val userIdString = sharedPreferences.getString("user_id", "")
+    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
+    if (userIdString != null) {
+        LaunchedEffect(Unit) {
+            val userId = userIdString.toInt()
+            val userDao = MainActivity.database.userDao()
+            userEntity = userDao.getUser(userId)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(navController)
         },
         content = { paddingValues ->
-            Content(paddingValues)
+            Content(paddingValues, userEntity)
         }
     )
 }
@@ -56,6 +77,7 @@ fun ProfileScreen(navController: NavHostController, viewModel: MainViewModel) {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun TopAppBar(navController: NavHostController) {
+
     TopAppBar(
         title = {
             Row(
@@ -104,7 +126,7 @@ private fun TopAppBar(navController: NavHostController) {
 }
 
 @Composable
-private fun Content(paddingValues: PaddingValues) {
+private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
     Image(
         modifier = Modifier.fillMaxSize(),
         painter = painterResource(id = R.drawable.bg2),
@@ -144,56 +166,133 @@ private fun Content(paddingValues: PaddingValues) {
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Телефон:", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "+7 999 123 45 67", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                if (userEntity?.phone != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Телефон:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "+${userEntity.phone}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                if (userEntity?.name != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Имя:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${userEntity.name}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                if (userEntity?.username != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Никнейм:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${userEntity.username}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Никнейм:", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "JohnDoe", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                if (userEntity?.city != null && userEntity.city.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Город:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${userEntity.city}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
+                if (userEntity?.birthday != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Дата рождения:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${userEntity.birthday}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Знак зодиака:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Город:", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "Москва", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = "${userEntity.zodiacSign}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
+                if (userEntity?.status != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "О себе:",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Дата рождения:", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "12.05.1995", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = "${userEntity.status}",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Знак зодиака:", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = "Телец", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                Text(
-                    text = "О себе: Я люблю путешествия, чтение книг и общение с друзьями. В свободное время я занимаюсь спортом и учусь новым навыкам.",
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
             }
         }
     }

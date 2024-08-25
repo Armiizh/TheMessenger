@@ -26,11 +26,10 @@ interface Api {
     suspend fun register(@Body reg: RegisterIn): Response<Token>
 
     @GET("me/")
-    suspend fun getCurrentUser(@Header("Authorization") authorization: String): Response<User>
+    suspend fun getCurrentUser(): Response<User>
 
     @POST("refresh-token/")
     suspend fun refreshToken(
-        @Body refreshToken: RefreshToken,
-        @Header("Authorization") authorization: String
+        @Body refreshToken: RefreshToken
     ): Response<Token>
 }
