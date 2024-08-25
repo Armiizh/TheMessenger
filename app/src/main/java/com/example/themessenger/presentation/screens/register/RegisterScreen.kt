@@ -72,7 +72,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: MainViewModel) {
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                             .background(
-                                color = colorResource(id = R.color.TopAppBarColor),
+                                color = colorResource(id = R.color.LightLightGray),
                                 shape = RoundedCornerShape(16.dp)
                             ),
                         verticalArrangement = Arrangement.Center
