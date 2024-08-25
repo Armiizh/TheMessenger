@@ -33,7 +33,7 @@ class MainViewModel(private val application: Application): ViewModel() {
     private var mobileNumber: String = ""
     private var authCode: String = ""
     var name: String = ""
-    private var username: String = ""
+    var username: String = ""
 
     private var accessToken: String? = null
     private var refreshToken: String? = null
@@ -216,6 +216,7 @@ class MainViewModel(private val application: Application): ViewModel() {
                         }
                         val userEntity = UserEntity(
                             name = user.name,
+                            username = user.username,
                             birthday = user.birthday,
                             city = user.city,
                             vk = user.vk,
@@ -235,7 +236,6 @@ class MainViewModel(private val application: Application): ViewModel() {
                                 ""
                             }
                         )
-
                         Log.d("CHECK", "${userEntity.phone}")
                         userDao.insertUser(userEntity)
                         Log.d("Database", "User data inserted successfully")
@@ -288,10 +288,6 @@ class MainViewModel(private val application: Application): ViewModel() {
 
     fun getMobileNumber(): String {
         return mobileNumber
-    }
-
-    fun setUserName(username: String) {
-        this.username = username
     }
 
     fun setAuthCode(authCode: String) {

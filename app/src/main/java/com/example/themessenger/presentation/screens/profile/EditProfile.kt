@@ -1,6 +1,11 @@
 package com.example.themessenger.presentation.screens.profile
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,16 +28,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,11 +53,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
+import com.example.themessenger.data.room.dao.UserDao
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.presentation.navigation.NavRoute
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun EditProfile(navController: NavHostController) {
@@ -58,10 +70,10 @@ fun EditProfile(navController: NavHostController) {
     val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val userIdString = sharedPreferences.getString("user_id", "")
     var userEntity by remember { mutableStateOf<UserEntity?>(null) }
+    val userDao = MainActivity.database.userDao()
     if (userIdString != null) {
         LaunchedEffect(Unit) {
             val userId = userIdString.toInt()
-            val userDao = MainActivity.database.userDao()
             userEntity = userDao.getUser(userId)
         }
     }
@@ -72,7 +84,7 @@ fun EditProfile(navController: NavHostController) {
             TopAppBar(navController)
         },
         content = { paddingValues ->
-            Content(paddingValues, userEntity)
+            Content(paddingValues, userEntity, navController, userDao)
         },
         bottomBar = {
             BottomAppBar(
@@ -114,7 +126,7 @@ private fun TopAppBar(navController: NavHostController) {
                     fontSize = 30.sp,
                     fontFamily = FontFamily(Font(R.font.roboto_bold)),
                 )
-                Spacer(modifier = Modifier.weight(0.8f))
+                Spacer(modifier = Modifier.weight(0.7f))
                 Text(
                     modifier = Modifier
                         .padding(end = 16.dp)
@@ -134,8 +146,20 @@ private fun TopAppBar(navController: NavHostController) {
 }
 
 @Composable
-private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
-
+private fun Content(
+    paddingValues: PaddingValues,
+    userEntity: UserEntity?,
+    navController: NavHostController,
+    userDao: UserDao
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let { saveImageToInternalStorage(context, it, userEntity, userDao, scope) }
+        }
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -148,7 +172,8 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
             modifier = Modifier
                 .size(180.dp)
                 .padding(8.dp)
-                .clip(CircleShape),
+                .clip(CircleShape)
+                .clickable { launcher.launch("image/*") },
             painter = painterResource(id = R.drawable.person),
             contentDescription = ""
         )
@@ -166,8 +191,7 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                 focusedElevation = 4.dp
             ),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White,
-                contentColor = Color.White
+                containerColor = Color.White
             )
         ) {
             LazyColumn(
@@ -177,64 +201,281 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    EditProfileItem("Имя", userEntity?.name ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Телефон",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "+${userEntity?.phone}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
                 item {
-                    EditProfileItem("Никнейм", userEntity?.username ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Никнейм",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.username}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
                 item {
-                    EditProfileItem("Город", userEntity?.city ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Имя",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.name}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(NavRoute.EditName.route)
+                                }
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(id = R.drawable.right_arrow),
+                                    contentDescription = "",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
                 item {
-                    EditProfileItem("Дата рождения", userEntity?.birthday ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Город",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.city}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(NavRoute.EditCity.route)
+                                }
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(id = R.drawable.right_arrow),
+                                    contentDescription = "",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
                 item {
-                    EditProfileItem("Знак зодиака", userEntity?.zodiacSign ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Дата рождения",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.birthday}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(NavRoute.EditBirthday.route)
+                                }
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(id = R.drawable.right_arrow),
+                                    contentDescription = "",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
                 item {
-                    EditProfileItem("О себе", userEntity?.status ?: "Добавьте информацию")
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Знак зодиака",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.zodiacSign}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
+                }
+                item {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "О себе",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(Font(R.font.roboto_bold)),
+                                    color = Color.Black
+                                )
+                                Text(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    text = "${userEntity?.status}",
+                                    fontSize = 14.sp,
+                                    fontFamily = FontFamily(Font(R.font.roboto_medium)),
+                                    color = Color.Black
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(NavRoute.EditStatus.route)
+                                }
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(id = R.drawable.right_arrow),
+                                    contentDescription = "",
+                                    tint = Color.Black
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun EditProfileItem(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text(
-                text = title,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily(Font(R.font.roboto_bold)),
-                color = Color.Black
-            )
-            Text(
-                modifier = Modifier.padding(vertical = 4.dp),
-                text = description,
-                fontSize = 18.sp,
-                fontFamily = FontFamily(Font(R.font.roboto_medium)),
-                color = Color.Black
-            )
-            HorizontalDivider(
-                modifier = modifier,
-                thickness = 1.dp,
-                color = Color.LightGray
-            )
+fun saveImageToInternalStorage(context: Context, uri: Uri, userEntity: UserEntity?, userDao: UserDao, scope: CoroutineScope) {
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val outputStream = context.openFileOutput("image.jpg", Context.MODE_PRIVATE)
+    inputStream?.use { input ->
+        outputStream.use { output ->
+            input.copyTo(output)
         }
-        Icon(
-            painter = painterResource(id = R.drawable.right_arrow),
-            contentDescription = "",
-            tint = Color.Black
+    }
+
+    scope.launch {
+        userDao.updateUser(
+            id = userEntity?.id,
+            name = userEntity?.name,
+            phone = userEntity?.phone,
+            username = userEntity?.username,
+            city = userEntity?.city,
+            birthday = userEntity?.birthday,
+            zodiacSign = userEntity?.zodiacSign,
+            status = userEntity?.status,
+            avatar = uri.toString()
         )
     }
 }

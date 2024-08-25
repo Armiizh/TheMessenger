@@ -11,6 +11,10 @@ import com.example.themessenger.presentation.screens.login.ConfirmScreen
 import com.example.themessenger.presentation.screens.login.LoginScreen
 import com.example.themessenger.presentation.screens.profile.EditProfile
 import com.example.themessenger.presentation.screens.profile.ProfileScreen
+import com.example.themessenger.presentation.screens.profile.editScreens.EditBirthday
+import com.example.themessenger.presentation.screens.profile.editScreens.EditCity
+import com.example.themessenger.presentation.screens.profile.editScreens.EditName
+import com.example.themessenger.presentation.screens.profile.editScreens.EditStatus
 
 import com.example.themessenger.presentation.screens.register.RegisterScreen
 import com.example.themessenger.utils.Constants
@@ -59,6 +63,26 @@ fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController
                 navController = navController
             )
         }
+        composable(NavRoute.EditName.route) {
+            EditName(
+                navController = navController
+            )
+        }
+        composable(NavRoute.EditCity.route) {
+            EditCity(
+                navController = navController
+            )
+        }
+        composable(NavRoute.EditBirthday.route) {
+            EditBirthday(
+                navController = navController
+            )
+        }
+        composable(NavRoute.EditStatus.route) {
+            EditStatus(
+                navController = navController
+            )
+        }
     }
 }
 
@@ -70,4 +94,8 @@ sealed class NavRoute(val route: String) {
     data object Chat: NavRoute(Constants.Screens.CHAT_SCREEN)
     data object Profile: NavRoute(Constants.Screens.PROFILE_SCREEN)
     data object EditProfile: NavRoute(Constants.Screens.EDIT_PROFILE_SCREEN)
+    data object EditName: NavRoute(Constants.Screens.EDIT_NAME)
+    data object EditCity: NavRoute(Constants.Screens.EDIT_CITY)
+    data object EditBirthday: NavRoute(Constants.Screens.EDIT_BIRTHDAY)
+    data object EditStatus: NavRoute(Constants.Screens.EDIT_STATUS)
 }

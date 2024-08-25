@@ -148,7 +148,7 @@ fun ChatScreen(navController: NavHostController, viewModel: MainViewModel) {
                         )
                     }
                 },
-                containerColor = colorResource(id = R.color.TopAppBarColor),
+                containerColor = colorResource(id = R.color.LightLightGray),
             )
         }
 
@@ -210,7 +210,7 @@ private fun TopAppBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorResource(id = R.color.TopAppBarColor),
+            containerColor = colorResource(id = R.color.LightLightGray),
             titleContentColor = Color.Black
         )
     )

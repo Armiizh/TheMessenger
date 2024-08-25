@@ -152,7 +152,7 @@ private fun Button(
             .padding(top = 8.dp),
         onClick = {
             viewModel.name = name
-            viewModel.setUserName(username)
+            viewModel.username = username
             Log.d("Check", "name is ${viewModel.name}")
             viewModel.register(navController)
         },

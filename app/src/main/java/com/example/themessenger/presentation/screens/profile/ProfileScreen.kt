@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.presentation.MainActivity
@@ -125,7 +126,7 @@ private fun TopAppBar(navController: NavHostController) {
                     contentDescription = "",
                     modifier = Modifier
                         .padding(end = 16.dp)
-                        .clickable { navController.navigate(NavRoute.EditProfile.route)}
+                        .clickable { navController.navigate(NavRoute.EditProfile.route) }
                 )
             }
         },
@@ -152,7 +153,13 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                 .size(180.dp)
                 .padding(8.dp)
                 .clip(CircleShape),
-            painter = painterResource(id = R.drawable.person),
+            painter = rememberImagePainter(
+                data = userEntity?.avatar,
+                builder = {
+                    crossfade(true)
+                    placeholder(R.drawable.person)
+                }
+            ),
             contentDescription = ""
         )
         Text(
@@ -180,10 +187,16 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    ProfileItem("Имя", userEntity?.name ?: "Добавьте информацию")
+                    ProfileItem(
+                        "Телефон",
+                        "+${userEntity?.phone}" ?: "Добавьте информацию"
+                    )
                 }
                 item {
                     ProfileItem("Никнейм", userEntity?.username ?: "Добавьте информацию")
+                }
+                item {
+                    ProfileItem("Имя", userEntity?.name ?: "Добавьте информацию")
                 }
                 item {
                     ProfileItem("Город", userEntity?.city ?: "Добавьте информацию")
@@ -214,7 +227,7 @@ fun ProfileItem(
         Column {
             Text(
                 text = title,
-                fontSize = 22.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily(Font(R.font.roboto_bold)),
                 color = Color.Black
@@ -222,7 +235,7 @@ fun ProfileItem(
             Text(
                 modifier = Modifier.padding(vertical = 4.dp),
                 text = description,
-                fontSize = 18.sp,
+                fontSize = 14.sp,
                 fontFamily = FontFamily(Font(R.font.roboto_medium)),
                 color = Color.Black
             )
