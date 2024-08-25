@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -148,7 +148,7 @@ fun ChatScreen(navController: NavHostController, viewModel: MainViewModel) {
                         )
                     }
                 },
-                containerColor = colorResource(id = R.color.TopAppBarColor),
+                containerColor = colorResource(id = R.color.LightLightGray),
             )
         }
 
@@ -210,7 +210,7 @@ private fun TopAppBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorResource(id = R.color.TopAppBarColor),
+            containerColor = colorResource(id = R.color.LightLightGray),
             titleContentColor = Color.Black
         )
     )

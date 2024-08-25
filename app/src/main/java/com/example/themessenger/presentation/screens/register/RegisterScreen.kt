@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,7 +152,7 @@ private fun Button(
             .padding(top = 8.dp),
         onClick = {
             viewModel.name = name
-            viewModel.setUserName(username)
+            viewModel.username = username
             Log.d("Check", "name is ${viewModel.name}")
             viewModel.register(navController)
         },

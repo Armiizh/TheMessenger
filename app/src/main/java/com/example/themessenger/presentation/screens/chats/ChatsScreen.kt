@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +53,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.themessenger.presentation.MainViewModel
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.R
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.CoroutineScope
@@ -100,11 +101,11 @@ fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
         },
         drawerContent = {
             Scaffold(
-                containerColor = colorResource(id = R.color.TopAppBarColor),
+                containerColor = colorResource(id = R.color.LightLightGray),
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
-                    .background(colorResource(id = R.color.TopAppBarColor)),
+                    .background(colorResource(id = R.color.LightLightGray)),
                 topBar = {
                     DrawerTopAppBar()
                 },
@@ -114,7 +115,8 @@ fun ChatsScreen(navController: NavHostController, viewModel: MainViewModel) {
                         navController,
                         menuItems1,
                         snackbarHostState,
-                        menuItems2
+                        menuItems2,
+                        viewModel
                     )
                 }
             )
@@ -128,12 +130,13 @@ private fun DrawerContent(
     navController: NavHostController,
     menuItems1: List<MenuItem>,
     snackbarHostState: SnackbarHostState,
-    menuItems2: List<MenuItem>
+    menuItems2: List<MenuItem>,
+    viewModel: MainViewModel
 ) {
     Column(
         modifier = Modifier
             .padding(paddingValues)
-            .background(color = colorResource(id = R.color.TopAppBarColor))
+            .background(color = colorResource(id = R.color.LightLightGray))
     ) {
         MyProfile(navController)
         DrawerItem(menuItem = menuItems1, snackbarHostState)
@@ -148,7 +151,10 @@ private fun DrawerContent(
                 contentColor = colorResource(id = R.color.white)
             ),
             shape = RoundedCornerShape(8.dp),
-            onClick = { navController.navigate(NavRoute.Login.route) }) {
+            onClick = {
+                navController.navigate(NavRoute.Login.route)
+                viewModel.logout()
+            }) {
             Text(
                 text = "Выйти",
                 fontFamily = FontFamily(Font(R.font.roboto_light))
@@ -168,7 +174,7 @@ private fun DrawerTopAppBar() {
             )
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorResource(id = R.color.TopAppBarColor),
+            containerColor = colorResource(id = R.color.LightLightGray),
             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
     )
@@ -181,7 +187,7 @@ private fun ChatContent(
 ) {
     Image(
         modifier = Modifier.fillMaxSize(),
-        painter = painterResource(id = R.drawable.bg3),
+        painter = painterResource(id = R.drawable.bg1),
         contentDescription = "",
         contentScale = ContentScale.Crop
     )
@@ -238,7 +244,7 @@ private fun ChatTopAppBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorResource(id = R.color.TopAppBarColor),
+            containerColor = colorResource(id = R.color.LightLightGray),
             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
     )
@@ -252,17 +258,19 @@ private fun MyProfile(navController: NavHostController) {
             .padding(horizontal = 8.dp)
             .padding(top = 16.dp, bottom = 8.dp)
             .background(
-                color = colorResource(id = R.color.DrawerContent),
+                color = Color.Gray,
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable { navController.navigate(NavRoute.Profile.route) },
+            .clickable {
+                navController.navigate(NavRoute.Profile.route)
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             modifier = Modifier.padding(4.dp),
             imageVector = Icons.Filled.Person,
             contentDescription = "Профиль",
-            tint = Color.Gray
+            tint = Color.DarkGray
         )
         Text(
             modifier = Modifier.padding(start = 4.dp),
@@ -277,7 +285,7 @@ private fun MyProfile(navController: NavHostController) {
                 .padding(4.dp),
             painter = painterResource(id = R.drawable.right_arrow),
             contentDescription = "",
-            tint = Color.Gray
+            tint = Color.DarkGray
         )
     }
 }
@@ -367,7 +375,7 @@ private fun DrawerItem(menuItem: List<MenuItem>, snackbarHostState: SnackbarHost
             .padding(horizontal = 8.dp)
             .padding(top = 8.dp, bottom = 8.dp)
             .background(
-                color = colorResource(id = R.color.DrawerContent),
+                color = Color.Gray,
                 shape = RoundedCornerShape(8.dp)
             )
     ) {
@@ -392,7 +400,7 @@ private fun DrawerItem(menuItem: List<MenuItem>, snackbarHostState: SnackbarHost
                         .size(24.dp),
                     painter = painterResource(id = item.iconId),
                     contentDescription = "",
-                    tint = Color.Gray
+                    tint = Color.DarkGray
                 )
                 Text(
                     modifier = Modifier.padding(start = 4.dp),
@@ -407,7 +415,7 @@ private fun DrawerItem(menuItem: List<MenuItem>, snackbarHostState: SnackbarHost
                         .padding(4.dp),
                     painter = painterResource(id = R.drawable.right_arrow),
                     contentDescription = "",
-                    tint = Color.Gray
+                    tint = Color.DarkGray
                 )
             }
         }
