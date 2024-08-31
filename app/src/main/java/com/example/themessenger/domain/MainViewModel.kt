@@ -7,6 +7,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import com.chuckerteam.chucker.api.ChuckerCollector
+import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.chuckerteam.chucker.api.RetentionManager
 import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.data.api.Api
 import com.example.themessenger.data.api.models.CheckAuthCode
@@ -250,6 +253,30 @@ class MainViewModel(private val application: Application): ViewModel() {
             }
         }
     }
+    val chuckerCollector = ChuckerCollector(
+        context = application,
+        // Toggles visibility of the notification
+        showNotification = true,
+        // Allows to customize the retention period of collected data
+        retentionPeriod = RetentionManager.Period.ONE_HOUR
+    )
+    val chuckerInterceptor = ChuckerInterceptor.Builder(application)
+        // The previously created Collector
+        .collector(chuckerCollector)
+        // The max body content length in bytes, after this responses will be truncated.
+        .maxContentLength(250_000L)
+        // List of headers to replace with ** in the Chucker UI
+        .redactHeaders("Auth-Token", "Bearer")
+        // Read the whole response body even when the client does not consume the response completely.
+        // This is useful in case of parsing errors or when the response body
+        // is closed before being read like in Retrofit with Void and Unit types.
+        .alwaysReadResponseBody(true)
+        // Use decoder when processing request and response bodies. When multiple decoders are installed they
+        // are applied in an order they were added.
+        // Controls Android shortcut creation.
+        .createShortcut(true)
+        .build()
+
 
     //Api Without Header
     private val interceptorWithoutToken = HttpLoggingInterceptor().apply {
@@ -257,6 +284,7 @@ class MainViewModel(private val application: Application): ViewModel() {
     }
     private val clientWithoutToken = OkHttpClient.Builder()
         .addNetworkInterceptor(interceptorWithoutToken)
+        .addInterceptor(chuckerInterceptor)
         .build()
     private val retrofitWithoutToken =
         Retrofit.Builder()
@@ -273,6 +301,7 @@ class MainViewModel(private val application: Application): ViewModel() {
     private var clientWithToken = OkHttpClient.Builder()
         .addNetworkInterceptor(interceptorWithToken)
         .addInterceptor(AuthorizationInterceptor(this))
+        .addInterceptor(chuckerInterceptor)
         .build()
     private var retrofitWithToken =
         Retrofit.Builder()

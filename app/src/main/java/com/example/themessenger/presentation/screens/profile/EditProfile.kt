@@ -174,7 +174,7 @@ private fun Content(
                 .padding(8.dp)
                 .clip(CircleShape)
                 .clickable { launcher.launch("image/*") },
-            painter = painterResource(id = R.drawable.person),
+            painter = painterResource(id = R.drawable.person), ///////////////
             contentDescription = ""
         )
         Text(
