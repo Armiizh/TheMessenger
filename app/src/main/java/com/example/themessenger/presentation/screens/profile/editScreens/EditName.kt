@@ -55,7 +55,6 @@ fun EditName(navController: NavHostController) {
     if (userIdString != null) {
         LaunchedEffect(Unit) {
             val userId = userIdString.toInt()
-
             userEntity = userDao.getUser(userId)
         }
     }
