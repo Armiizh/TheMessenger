@@ -1,9 +1,7 @@
 package com.example.themessenger.presentation.screens.profile
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -20,8 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,7 +49,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
 import com.example.themessenger.data.room.dao.UserDao
@@ -77,6 +72,7 @@ fun EditProfile(navController: NavHostController) {
             userEntity = userDao.getUser(userId)
         }
     }
+
 
     Scaffold(
         containerColor = colorResource(id = R.color.LightLightGray),
@@ -456,7 +452,13 @@ private fun Content(
     }
 }
 
-fun saveImageToInternalStorage(context: Context, uri: Uri, userEntity: UserEntity?, userDao: UserDao, scope: CoroutineScope) {
+fun saveImageToInternalStorage(
+    context: Context,
+    uri: Uri,
+    userEntity: UserEntity?,
+    userDao: UserDao,
+    scope: CoroutineScope
+) {
     val inputStream = context.contentResolver.openInputStream(uri)
     val outputStream = context.openFileOutput("image.jpg", Context.MODE_PRIVATE)
     inputStream?.use { input ->

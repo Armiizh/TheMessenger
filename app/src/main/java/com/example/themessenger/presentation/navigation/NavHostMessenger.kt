@@ -75,7 +75,8 @@ fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController
         }
         composable(NavRoute.EditBirthday.route) {
             EditBirthday(
-                navController = navController
+                navController = navController,
+                viewModel = mViewModel
             )
         }
         composable(NavRoute.EditStatus.route) {

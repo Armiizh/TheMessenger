@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -70,8 +71,8 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
 
-    debugImplementation ("com.github.chuckerteam.chucker:library:4.0.0")
-    releaseImplementation ("com.github.chuckerteam.chucker:library-no-op:4.0.0")
+    debugImplementation (libs.library)
+    releaseImplementation (libs.library.no.op)
 
 
     implementation(libs.cmp.country.code.picker)

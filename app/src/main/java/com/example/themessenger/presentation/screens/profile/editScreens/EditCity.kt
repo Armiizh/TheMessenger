@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,8 +34,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -58,10 +64,11 @@ fun EditCity(navController: NavHostController) {
             userEntity = userDao.getUser(userId)
         }
     }
-    var city by remember {
-        mutableStateOf("")
-    }
-    city = userEntity?.city.toString()
+    val city = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
+    city.value = TextFieldValue(
+        text = userEntity?.city.toString(),
+        selection = TextRange(userEntity?.city.toString().length)
+    )
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -107,7 +114,7 @@ fun EditCity(navController: NavHostController) {
                                             name = userEntity?.name,
                                             phone = userEntity?.phone,
                                             username = userEntity?.username,
-                                            city = city,
+                                            city = city.value.text,
                                             birthday = userEntity?.birthday,
                                             zodiacSign = userEntity?.zodiacSign,
                                             status = userEntity?.status,
@@ -138,14 +145,23 @@ fun EditCity(navController: NavHostController) {
                 TextField(
                     modifier = Modifier.fillMaxWidth()
                         .focusRequester(focusRequester),
-                    value = city,
-                    onValueChange = {
-                        city = it
+                    value = city.value,
+                    onValueChange = { newValue ->
+                        city.value = TextFieldValue(text = newValue.text, selection = TextRange(newValue.text.length))
                     },
+                    label = { Text(text = "Имя")},
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent
+                    ),
+                    textStyle = TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontFamily = FontFamily(Font(R.font.roboto_regular)),
+                        fontSize = 24.sp
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
                     )
                 )
             }

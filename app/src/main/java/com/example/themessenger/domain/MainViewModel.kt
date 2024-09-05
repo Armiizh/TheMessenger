@@ -31,7 +31,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Timer
 import java.util.TimerTask
 
-class MainViewModel(private val application: Application): ViewModel() {
+class MainViewModel(application: Application): ViewModel() {
 
     private var mobileNumber: String = ""
     private var authCode: String = ""
@@ -255,25 +255,14 @@ class MainViewModel(private val application: Application): ViewModel() {
     }
     val chuckerCollector = ChuckerCollector(
         context = application,
-        // Toggles visibility of the notification
         showNotification = true,
-        // Allows to customize the retention period of collected data
         retentionPeriod = RetentionManager.Period.ONE_HOUR
     )
     val chuckerInterceptor = ChuckerInterceptor.Builder(application)
-        // The previously created Collector
         .collector(chuckerCollector)
-        // The max body content length in bytes, after this responses will be truncated.
         .maxContentLength(250_000L)
-        // List of headers to replace with ** in the Chucker UI
         .redactHeaders("Auth-Token", "Bearer")
-        // Read the whole response body even when the client does not consume the response completely.
-        // This is useful in case of parsing errors or when the response body
-        // is closed before being read like in Retrofit with Void and Unit types.
         .alwaysReadResponseBody(true)
-        // Use decoder when processing request and response bodies. When multiple decoders are installed they
-        // are applied in an order they were added.
-        // Controls Android shortcut creation.
         .createShortcut(true)
         .build()
 
@@ -328,7 +317,7 @@ class MainViewModel(private val application: Application): ViewModel() {
         sharedPreferences.edit().clear().apply()
     }
 
-    private fun determineZodiacSign(birthDate: String): String {
+    fun determineZodiacSign(birthDate: String): String {
         if (birthDate.isEmpty() || birthDate == null) {
             return "Неизвестный знак зодиака"
         }

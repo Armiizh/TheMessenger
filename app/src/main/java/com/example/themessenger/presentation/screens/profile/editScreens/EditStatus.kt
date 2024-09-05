@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,11 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
@@ -59,15 +64,16 @@ fun EditStatus(navController: NavHostController) {
             userEntity = userDao.getUser(userId)
         }
     }
-    val scope = rememberCoroutineScope()
-    var status by remember {
-        mutableStateOf("")
-    }
-    status = userEntity?.status.toString()
+    val status = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
+    status.value = TextFieldValue(
+        text = userEntity?.status.toString(),
+        selection = TextRange(userEntity?.status.toString().length)
+    )
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+    val scope = rememberCoroutineScope()
     Scaffold(
         containerColor = colorResource(id = R.color.LightLightGray),
         topBar = {
@@ -111,7 +117,7 @@ fun EditStatus(navController: NavHostController) {
                                             city = userEntity?.city,
                                             birthday = userEntity?.birthday,
                                             zodiacSign = userEntity?.zodiacSign,
-                                            status = status,
+                                            status = status.value.text,
                                             avatar = userEntity?.avatar
                                         )
                                     }
@@ -139,14 +145,23 @@ fun EditStatus(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    value = status,
-                    onValueChange = {
-                        status = it
+                    value = status.value,
+                    onValueChange = { newValue ->
+                        status.value = TextFieldValue(text = newValue.text, selection = TextRange(newValue.text.length))
                     },
+                    label = { Text(text = "Имя")},
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent
+                    ),
+                    textStyle = TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontFamily = FontFamily(Font(R.font.roboto_regular)),
+                        fontSize = 24.sp
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
                     )
                 )
             }

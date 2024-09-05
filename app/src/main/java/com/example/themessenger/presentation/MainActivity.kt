@@ -38,9 +38,7 @@ class MainActivity : ComponentActivity() {
                 ).build()
                 val viewModel = MainViewModel(application)
                 val navController = rememberNavController()
-
                 NavHostMessenger(viewModel, navController)
-
             }
         }
     }
