@@ -302,7 +302,7 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-    fun String.toBase64(): String {
+    private fun String.toBase64(): String {
         return Base64.getEncoder().encodeToString(this.toByteArray())
     }
 
@@ -314,12 +314,12 @@ class MainViewModel @Inject constructor(
         userDao.updateUser(userEntity)
     }.await()
 
-    val chuckerCollector = ChuckerCollector(
+    private val chuckerCollector = ChuckerCollector(
         context = application,
         showNotification = true,
         retentionPeriod = RetentionManager.Period.ONE_HOUR
     )
-    val chuckerInterceptor = ChuckerInterceptor.Builder(application).collector(chuckerCollector)
+    private val chuckerInterceptor = ChuckerInterceptor.Builder(application).collector(chuckerCollector)
         .maxContentLength(250_000L).redactHeaders("Auth-Token", "Bearer")
         .alwaysReadResponseBody(true).createShortcut(true).build()
 

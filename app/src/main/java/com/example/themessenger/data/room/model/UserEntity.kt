@@ -7,7 +7,7 @@ import com.example.themessenger.data.room.Avatar64Converter
 import com.example.themessenger.data.room.AvatarsConverter
 
 @Entity(tableName = "users")
-@TypeConverters(AvatarsConverter::class, Avatar64Converter::class)
+@TypeConverters (Avatar64Converter::class)
 data class UserEntity(
     var name: String ?= null,
     val username: String ?= null,

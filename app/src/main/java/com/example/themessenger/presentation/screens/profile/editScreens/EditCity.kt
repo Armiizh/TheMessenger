@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -43,25 +45,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditCity(navController: NavHostController, viewModel: MainViewModel) {
 
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
 
-    LaunchedEffect(Unit) {
-        userEntity = viewModel.getUser()
-    }
+    var city by remember { mutableStateOf(userEntity?.city ?: "") }
+    val cityFieldValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
 
-    val city = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
-    city.value = TextFieldValue(
-        text = userEntity?.city.toString(),
-        selection = TextRange(userEntity?.city.toString().length)
+    cityFieldValue.value = TextFieldValue(
+        text = city,
+        selection = TextRange(city.length)
     )
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -103,9 +104,10 @@ fun EditCity(navController: NavHostController, viewModel: MainViewModel) {
                                 .padding(end = 16.dp)
                                 .clickable {
                                     scope.launch {
+                                        city = cityFieldValue.value.text
                                         val user = viewModel.getUser()
                                         user?.let {
-                                            it.city = city.value.text
+                                            it.city = city
                                             viewModel.updateUser(user)
                                         }
                                     }
@@ -134,11 +136,11 @@ fun EditCity(navController: NavHostController, viewModel: MainViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    value = city.value,
+                    value = cityFieldValue.value,
                     onValueChange = { newValue ->
-                        city.value = TextFieldValue(
-                            text = newValue.text,
-                            selection = TextRange(newValue.text.length)
+                        cityFieldValue.value = TextFieldValue(
+                            newValue.text,
+                            TextRange(newValue.text.length)
                         )
                     },
                     label = { Text(text = "Город") },
@@ -153,7 +155,11 @@ fun EditCity(navController: NavHostController, viewModel: MainViewModel) {
                         fontSize = 24.sp
                     ),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = KeyboardActions.Default.onDone
                     )
                 )
             }

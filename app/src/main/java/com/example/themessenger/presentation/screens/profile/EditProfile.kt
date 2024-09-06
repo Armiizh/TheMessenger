@@ -74,7 +74,7 @@ fun EditProfile(navController: NavHostController, viewModel: MainViewModel) {
             TopAppBar(navController, viewModel, imageUri)
         },
         content = { paddingValues ->
-            Content(paddingValues, userEntity, navController, imageUri, viewModel)
+            Content(paddingValues, userEntity, navController, imageUri)
         },
         bottomBar = {
             BottomAppBar(
@@ -155,20 +155,11 @@ private fun Content(
     paddingValues: PaddingValues,
     userEntity: UserEntity?,
     navController: NavHostController,
-    imageUri: MutableState<Uri?>,
-    viewModel: MainViewModel
+    imageUri: MutableState<Uri?>
 ) {
-    val scope = rememberCoroutineScope()
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
             imageUri.value = uri
-            scope.launch {
-                val user = viewModel.getUser()
-                user?.let {
-                    it.avatar = imageUri.value.toString()
-                    viewModel.updateUser(user)
-                }
-            }
         }
     Column(
         modifier = Modifier
@@ -318,7 +309,11 @@ private fun Content(
                                 )
                                 Text(
                                     modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "${userEntity?.name}",
+                                    text = if ((userEntity?.name == null) || (userEntity.name == "null") || (userEntity.name == "")) {
+                                        "Добавьте информацию"
+                                    } else {
+                                        "${userEntity.name}"
+                                    },
                                     fontSize = 14.sp,
                                     fontFamily = FontFamily(Font(R.font.roboto_medium)),
                                     color = Color.Black
@@ -359,7 +354,11 @@ private fun Content(
                                 )
                                 Text(
                                     modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "${userEntity?.city}",
+                                    text = if ((userEntity?.city == null) || (userEntity.city == "null") || (userEntity.city == "")) {
+                                        "Добавьте информацию"
+                                    } else {
+                                        "${userEntity.city}"
+                                    },
                                     fontSize = 14.sp,
                                     fontFamily = FontFamily(Font(R.font.roboto_medium)),
                                     color = Color.Black
@@ -400,7 +399,11 @@ private fun Content(
                                 )
                                 Text(
                                     modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "${userEntity?.birthday}",
+                                    text = if ((userEntity?.birthday == null) || (userEntity.birthday == "null") || (userEntity.birthday == "")) {
+                                        "Добавьте информацию"
+                                    } else {
+                                        "${userEntity.birthday}"
+                                    },
                                     fontSize = 14.sp,
                                     fontFamily = FontFamily(Font(R.font.roboto_medium)),
                                     color = Color.Black
@@ -470,7 +473,11 @@ private fun Content(
                                 )
                                 Text(
                                     modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "${userEntity?.status}",
+                                    text = if ((userEntity?.status == null) || (userEntity.status == "null") || (userEntity.status == "")) {
+                                        "Добавьте информацию"
+                                    } else {
+                                        "${userEntity.status}"
+                                    },
                                     fontSize = 14.sp,
                                     fontFamily = FontFamily(Font(R.font.roboto_medium)),
                                     color = Color.Black

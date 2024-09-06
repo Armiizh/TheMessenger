@@ -30,11 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,16 +53,13 @@ import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun ProfileScreen(navController: NavHostController, viewModel: MainViewModel) {
 
-
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-
-    LaunchedEffect(Unit) {
-        userEntity = viewModel.getUser()
-    }
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
 
     Scaffold(
         containerColor = colorResource(id = R.color.LightLightGray),
@@ -113,7 +108,7 @@ private fun TopAppBar(navController: NavHostController) {
                         fontFamily = FontFamily(Font(R.font.roboto_medium))
                     )
                 }
-                Spacer(modifier = Modifier.weight(0.5f))
+                Spacer(modifier = Modifier.weight(0.6f))
                 Text(
                     text = "Профиль",
                     fontSize = 30.sp,
@@ -151,7 +146,11 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
         val imageUri = userEntity?.avatar?.let { Uri.parse(it) }
         if (imageUri != null) {
             Image(
-                painter = rememberAsyncImagePainter(model = ImageRequest.Builder(context).data(imageUri).build()),
+                painter = rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(context)
+                        .data(imageUri)
+                        .build()
+                ),
                 contentDescription = null,
                 modifier = Modifier
                     .size(200.dp)
@@ -169,7 +168,6 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
                     .clip(CircleShape)
             )
         }
-//
         Text(
             text = "Фото профиля",
             fontSize = 22.sp,
@@ -242,7 +240,11 @@ fun ProfileItem(
             )
             Text(
                 modifier = Modifier.padding(vertical = 4.dp),
-                text = description,
+                text = if (description != null || description != "null") {
+                    description
+                } else {
+                    "Добавьте информацию"
+                },
                 fontSize = 14.sp,
                 fontFamily = FontFamily(Font(R.font.roboto_medium)),
                 color = Color.Black

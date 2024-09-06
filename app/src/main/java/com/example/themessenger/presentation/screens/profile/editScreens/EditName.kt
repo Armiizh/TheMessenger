@@ -43,26 +43,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditName(navController: NavHostController, viewModel: MainViewModel) {
 
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
 
-
-    LaunchedEffect(Unit) {
-        userEntity = viewModel.getUser()
-    }
-
-    val name = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
-    name.value = TextFieldValue(
-        text = userEntity?.name.toString(),
-        selection = TextRange(userEntity?.name.toString().length)
+    var name by remember { mutableStateOf(userEntity?.name ?: "") }
+    val nameFieldValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
+    nameFieldValue.value = TextFieldValue(
+        text = name,
+        selection = TextRange(name.length)
     )
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -105,8 +102,9 @@ fun EditName(navController: NavHostController, viewModel: MainViewModel) {
                                 .clickable {
                                     scope.launch {
                                         val user = viewModel.getUser()
+                                        name = nameFieldValue.value.text
                                         user?.let {
-                                            it.name = name.value.text
+                                            it.name = name
                                             viewModel.updateUser(user)
                                         }
                                     }
@@ -135,9 +133,9 @@ fun EditName(navController: NavHostController, viewModel: MainViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    value = name.value,
+                    value = nameFieldValue.value,
                     onValueChange = { newValue ->
-                        name.value = TextFieldValue(
+                        nameFieldValue.value = TextFieldValue(
                             text = newValue.text,
                             selection = TextRange(newValue.text.length)
                         )

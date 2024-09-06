@@ -21,8 +21,9 @@ data class PutUser(
     val vk: String
 )
 data class Avatar(
-    @SerializedName("base_64")
-    val base_64: String,
     @SerializedName("filename")
-    val filename: String
+    val filename: String,
+    @SerializedName("base_64")
+    val base_64: String
+
 )

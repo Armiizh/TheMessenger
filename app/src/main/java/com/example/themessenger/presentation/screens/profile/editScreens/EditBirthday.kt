@@ -25,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,35 +44,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditBirthday(navController: NavHostController, viewModel: MainViewModel) {
 
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-    var day by remember { mutableStateOf("") }
-    var month by remember { mutableStateOf("") }
-    var year by remember { mutableStateOf("") }
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
+    val day by remember { mutableStateOf(userEntity?.birthday?.substring(8, 10) ?: "") }
+    val month by remember { mutableStateOf(userEntity?.birthday?.substring(5, 7) ?: "") }
+    val year by remember { mutableStateOf(userEntity?.birthday?.substring(0, 4) ?: "") }
 
-    LaunchedEffect(Unit) {
-        userEntity = viewModel.getUser()
-        val birthday = userEntity?.birthday
-        day = birthday?.substring(8, 10).toString()
-        month = birthday?.substring(5, 7).toString()
-        year = birthday?.substring(0, 4).toString()
-    }
+    val dayFiledValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
+    val monthFiledValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
+    val yearFiledValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
 
-
-    val dayFiledValue =
-        remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
-    val monthFiledValue =
-        remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
-    val yearFiledValue =
-        remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
     dayFiledValue.value = TextFieldValue(
         text = day,
         selection = TextRange(day.length)
@@ -170,7 +159,7 @@ fun EditBirthday(navController: NavHostController, viewModel: MainViewModel) {
                         if (newValue.text.length <= 2) {
                             dayFiledValue.value = TextFieldValue(
                                 newValue.text,
-                                selection = TextRange(newValue.text.length)
+                                TextRange(newValue.text.length)
                             )
                         }
                     },

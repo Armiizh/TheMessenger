@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,38 +29,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
-import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
 
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
 
-    LaunchedEffect(Unit) {
-        userEntity = viewModel.getUser()
-    }
+    var status by remember { mutableStateOf(userEntity?.status ?: "") }
+    val statusFieldValue = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
 
-    val status = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
-    status.value = TextFieldValue(
-        text = userEntity?.status.toString(),
-        selection = TextRange(userEntity?.status.toString().length)
+    statusFieldValue.value = TextFieldValue(
+        text = status,
+        selection = TextRange(status.length)
     )
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -104,8 +102,9 @@ fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
                                 .clickable {
                                     scope.launch {
                                         val user = viewModel.getUser()
+                                        status = statusFieldValue.value.text
                                         user?.let {
-                                            it.status = status.value.text
+                                            it.status = status
                                             viewModel.updateUser(user)
                                         }
                                     }
@@ -126,6 +125,7 @@ fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
         content = { paddingValues ->
             Column(
                 modifier = Modifier
+                    .onPlaced { focusRequester.requestFocus() }
                     .padding(paddingValues)
                     .fillMaxSize()
             ) {
@@ -133,9 +133,9 @@ fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    value = status.value,
+                    value = statusFieldValue.value,
                     onValueChange = { newValue ->
-                        status.value = TextFieldValue(
+                        statusFieldValue.value = TextFieldValue(
                             text = newValue.text,
                             selection = TextRange(newValue.text.length)
                         )
@@ -150,9 +150,6 @@ fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
                         textAlign = TextAlign.Center,
                         fontFamily = FontFamily(Font(R.font.roboto_regular)),
                         fontSize = 24.sp
-                    ),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
                     )
                 )
             }
