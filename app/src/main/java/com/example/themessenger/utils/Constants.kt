@@ -3,6 +3,7 @@ package com.example.themessenger.utils
 object Constants {
 
     const val CODE = "133337"
+    const val REQUEST_PERMISSION_CODE = 123
 
     object Screens {
         const val LOGIN_SCREEN = "login_screen"

@@ -43,7 +43,6 @@ import com.example.themessenger.R
 import com.example.themessenger.utils.Constants
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfirmScreen(navController: NavHostController, viewModel: MainViewModel) {
 

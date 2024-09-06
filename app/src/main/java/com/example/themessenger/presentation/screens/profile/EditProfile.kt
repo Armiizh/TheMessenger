@@ -1,9 +1,9 @@
 package com.example.themessenger.presentation.screens.profile
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,56 +31,50 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.themessenger.R
-import com.example.themessenger.data.room.dao.UserDao
 import com.example.themessenger.data.room.model.UserEntity
-import com.example.themessenger.presentation.MainActivity
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
+import kotlinx.coroutines.runBlocking
 
 @Composable
-fun EditProfile(navController: NavHostController) {
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    val userIdString = sharedPreferences.getString("user_id", "")
-    var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-    val userDao = MainActivity.database.userDao()
-    if (userIdString != null) {
-        LaunchedEffect(Unit) {
-            val userId = userIdString.toInt()
-            userEntity = userDao.getUser(userId)
-        }
-    }
+fun EditProfile(navController: NavHostController, viewModel: MainViewModel) {
 
+    val userEntityState = runBlocking { viewModel.getUser() }
+    val userEntity by remember { mutableStateOf(userEntityState) }
+
+    val imageUri = remember { mutableStateOf(userEntity?.avatar?.let { Uri.parse(it) }) }
 
     Scaffold(
         containerColor = colorResource(id = R.color.LightLightGray),
         topBar = {
-            TopAppBar(navController)
+            TopAppBar(navController, viewModel, imageUri)
         },
         content = { paddingValues ->
-            Content(paddingValues, userEntity, navController, userDao)
+            Content(paddingValues, userEntity, navController, imageUri, viewModel)
         },
         bottomBar = {
             BottomAppBar(
@@ -94,8 +88,12 @@ fun EditProfile(navController: NavHostController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopAppBar(navController: NavHostController) {
-
+private fun TopAppBar(
+    navController: NavHostController,
+    viewModel: MainViewModel,
+    imageUri: MutableState<Uri?>
+) {
+    val scope = rememberCoroutineScope()
     TopAppBar(
         title = {
             Row(
@@ -126,12 +124,23 @@ private fun TopAppBar(navController: NavHostController) {
                 Text(
                     modifier = Modifier
                         .padding(end = 16.dp)
-                        .clickable { navController.navigate(NavRoute.Profile.route) },
+                        .clickable {
+                            if (imageUri != null) {
+                                scope.launch {
+                                    val user = viewModel.getUser()
+                                    user?.let {
+                                        it.avatar = imageUri.value.toString()
+                                        viewModel.updateUser(user)
+                                        viewModel.putUser()
+                                    }
+                                }
+                            }
+                            navController.navigate(NavRoute.Profile.route)
+                        },
                     text = "Готово",
                     fontSize = 16.sp,
                     fontFamily = FontFamily(Font(R.font.roboto_medium))
                 )
-
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -146,16 +155,21 @@ private fun Content(
     paddingValues: PaddingValues,
     userEntity: UserEntity?,
     navController: NavHostController,
-    userDao: UserDao
+    imageUri: MutableState<Uri?>,
+    viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri: Uri? ->
-            uri?.let { saveImageToInternalStorage(context, it, userEntity, userDao, scope) }
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            imageUri.value = uri
+            scope.launch {
+                val user = viewModel.getUser()
+                user?.let {
+                    it.avatar = imageUri.value.toString()
+                    viewModel.updateUser(user)
+                }
+            }
         }
-    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -164,19 +178,53 @@ private fun Content(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        Icon(
-            modifier = Modifier
-                .size(180.dp)
-                .padding(8.dp)
-                .clip(CircleShape)
-                .clickable { launcher.launch("image/*") },
-            painter = painterResource(id = R.drawable.person), ///////////////
-            contentDescription = ""
-        )
+        val context = LocalContext.current
+        if (imageUri.value != null) {
+            Image(
+                painter = rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(context)
+                        .data(imageUri.value)
+                        .build()
+                ),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(8.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            if (userEntity?.avatar != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        model = ImageRequest.Builder(context)
+                            .data(userEntity.avatar?.let { Uri.parse(it) }).build()
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(8.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Image(
+                    painter = painterResource(id = R.drawable.person),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(8.dp)
+                        .clip(CircleShape)
+                )
+            }
+        }
         Text(
-            text = "Фото профиля",
+            text = "Редактировать",
             fontSize = 22.sp,
-            fontFamily = FontFamily(Font(R.font.roboto_bold))
+            fontFamily = FontFamily(Font(R.font.roboto_light)),
+            color = Color.DarkGray,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier.clickable { launcher.launch("image/*") }
         )
         Spacer(modifier = Modifier.height(16.dp))
         Card(
@@ -449,35 +497,5 @@ private fun Content(
                 }
             }
         }
-    }
-}
-
-fun saveImageToInternalStorage(
-    context: Context,
-    uri: Uri,
-    userEntity: UserEntity?,
-    userDao: UserDao,
-    scope: CoroutineScope
-) {
-    val inputStream = context.contentResolver.openInputStream(uri)
-    val outputStream = context.openFileOutput("image.jpg", Context.MODE_PRIVATE)
-    inputStream?.use { input ->
-        outputStream.use { output ->
-            input.copyTo(output)
-        }
-    }
-
-    scope.launch {
-        userDao.updateUser(
-            id = userEntity?.id,
-            name = userEntity?.name,
-            phone = userEntity?.phone,
-            username = userEntity?.username,
-            city = userEntity?.city,
-            birthday = userEntity?.birthday,
-            zodiacSign = userEntity?.zodiacSign,
-            status = userEntity?.status,
-            avatar = uri.toString()
-        )
     }
 }

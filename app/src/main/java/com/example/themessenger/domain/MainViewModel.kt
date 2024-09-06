@@ -10,16 +10,22 @@ import androidx.navigation.NavHostController
 import com.chuckerteam.chucker.api.ChuckerCollector
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.chuckerteam.chucker.api.RetentionManager
-import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.data.api.Api
+import com.example.themessenger.data.api.models.Avatar
 import com.example.themessenger.data.api.models.CheckAuthCode
 import com.example.themessenger.data.api.models.PhoneBase
+import com.example.themessenger.data.api.models.PutUser
 import com.example.themessenger.data.api.models.RefreshToken
 import com.example.themessenger.data.api.models.RegisterIn
+import com.example.themessenger.data.room.AppDatabase
+import com.example.themessenger.data.room.dao.UserDao
+import com.example.themessenger.data.room.model.Avatar64
 import com.example.themessenger.data.room.model.Avatars
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.presentation.navigation.NavRoute
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
@@ -28,10 +34,17 @@ import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.Base64
 import java.util.Timer
 import java.util.TimerTask
+import javax.inject.Inject
 
-class MainViewModel(application: Application): ViewModel() {
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val appDatabase: AppDatabase,
+    private val userDao: UserDao,
+    application: Application
+) : ViewModel() {
 
     private var mobileNumber: String = ""
     private var authCode: String = ""
@@ -48,8 +61,8 @@ class MainViewModel(application: Application): ViewModel() {
         return sharedPreferences.getString("access_token", "") ?: ""
     }
 
-    private fun getRefreshToken(): String {
-        return sharedPreferences.getString("refresh_token", "") ?: ""
+    fun getUserId(): Int {
+        return sharedPreferences.getString("user_id", "")!!.toInt()
     }
 
     private val timer = Timer()
@@ -93,8 +106,7 @@ class MainViewModel(application: Application): ViewModel() {
             try {
                 val response = apiWithoutToken.checkAuthCode(
                     CheckAuthCode(
-                        phone = mobileNumber,
-                        code = authCode
+                        phone = mobileNumber, code = authCode
                     )
                 )
                 if (response.isSuccessful) {
@@ -134,9 +146,7 @@ class MainViewModel(application: Application): ViewModel() {
             try {
                 val response = apiWithoutToken.register(
                     RegisterIn(
-                        phone = mobileNumber,
-                        name = name,
-                        username = username
+                        phone = mobileNumber, name = name, username = username
                     )
                 )
                 if (response.isSuccessful) {
@@ -172,7 +182,6 @@ class MainViewModel(application: Application): ViewModel() {
                 )
                 if (response.isSuccessful) {
                     val responseBody = response.body()
-                    Log.d("Check", "Успешный ответ: ${response.body()}")
                     if (responseBody != null) {
                         val newRefreshToken = responseBody.refresh_token
                         val newAccessToken = responseBody.access_token
@@ -201,7 +210,6 @@ class MainViewModel(application: Application): ViewModel() {
                     val responseBody = response.body()
                     if (responseBody != null) {
                         val user = responseBody.profileData
-                        val userDao = MainActivity.database.userDao()
                         val apiAvatars = user.avatars
                         var roomAvatars: Avatars? = null
                         if (apiAvatars != null) {
@@ -212,11 +220,10 @@ class MainViewModel(application: Application): ViewModel() {
                             )
                         } else {
                             roomAvatars = Avatars(
-                                avatar = "",
-                                bigAvatar = "",
-                                miniAvatar = ""
+                                avatar = "", bigAvatar = "", miniAvatar = ""
                             )
                         }
+                        val avatarBase64 = user.avatar?.toBase64()
                         val userEntity = UserEntity(
                             name = user.name,
                             username = user.username,
@@ -237,12 +244,12 @@ class MainViewModel(application: Application): ViewModel() {
                                 determineZodiacSign(user.birthday.toString())
                             } else {
                                 ""
-                            }
+                            },
+                            avatar64 = Avatar64(base_64 = avatarBase64.toString(), filename = user.avatar.toString())
                         )
                         Log.d("CHECK", "${userEntity.phone}")
                         userDao.insertUser(userEntity)
                         Log.d("Database", "User data inserted successfully")
-
                     }
                 } else {
                     Log.e("Error", "Ошибка: ${response.code()} ${response.message()}")
@@ -253,51 +260,91 @@ class MainViewModel(application: Application): ViewModel() {
             }
         }
     }
+
+    fun putUser() {
+        viewModelScope.launch {
+            val user = getUser()
+            val avatarBase64 = user?.avatar?.toBase64()
+            try {
+                val response = apiWithToken.putUser(
+                    PutUser(
+                        name = user?.name.toString(),
+                        username = user?.username.toString(),
+                        birthday = user?.birthday.toString(),
+                        city = user?.city.toString(),
+                        vk = user?.vk.toString(),
+                        instagram = user?.instagram.toString(),
+                        status = user?.status.toString(),
+                        avatar = Avatar(base_64 = avatarBase64.toString(), filename = user?.avatar.toString())
+                    )
+                )
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody != null) {
+                        val avatar = Avatars(
+                            avatar = responseBody.avatar,
+                            bigAvatar = responseBody.bigAvatar,
+                            miniAvatar = responseBody.miniAvatar
+                        )
+                        val userr = UserEntity(
+                            avatars = avatar,
+                            avatar64 = Avatar64(base_64 = avatarBase64.toString(), filename = user?.avatar.toString())
+                        )
+                        updateUser(userr)
+                    } else {
+                        Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
+                    }
+                } else {
+                    Log.e("Check", "Ошибка: ${response.code()} ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Error", "Ошибка: $e")
+            }
+        }
+    }
+    fun String.toBase64(): String {
+        return Base64.getEncoder().encodeToString(this.toByteArray())
+    }
+
+    suspend fun getUser(): UserEntity? = viewModelScope.async(Dispatchers.IO) {
+        appDatabase.userDao().getUser(id = getUserId())
+    }.await()
+
+    suspend fun updateUser(userEntity: UserEntity) = viewModelScope.async(Dispatchers.IO) {
+        userDao.updateUser(userEntity)
+    }.await()
+
     val chuckerCollector = ChuckerCollector(
         context = application,
         showNotification = true,
         retentionPeriod = RetentionManager.Period.ONE_HOUR
     )
-    val chuckerInterceptor = ChuckerInterceptor.Builder(application)
-        .collector(chuckerCollector)
-        .maxContentLength(250_000L)
-        .redactHeaders("Auth-Token", "Bearer")
-        .alwaysReadResponseBody(true)
-        .createShortcut(true)
-        .build()
+    val chuckerInterceptor = ChuckerInterceptor.Builder(application).collector(chuckerCollector)
+        .maxContentLength(250_000L).redactHeaders("Auth-Token", "Bearer")
+        .alwaysReadResponseBody(true).createShortcut(true).build()
 
 
     //Api Without Header
     private val interceptorWithoutToken = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    private val clientWithoutToken = OkHttpClient.Builder()
-        .addNetworkInterceptor(interceptorWithoutToken)
-        .addInterceptor(chuckerInterceptor)
-        .build()
+    private val clientWithoutToken =
+        OkHttpClient.Builder().addNetworkInterceptor(interceptorWithoutToken)
+            .addInterceptor(chuckerInterceptor).build()
     private val retrofitWithoutToken =
-        Retrofit.Builder()
-            .baseUrl("https://plannerok.ru/api/v1/users/")
-            .client(clientWithoutToken)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+        Retrofit.Builder().baseUrl("https://plannerok.ru/api/v1/users/").client(clientWithoutToken)
+            .addConverterFactory(GsonConverterFactory.create()).build()
     private val apiWithoutToken = retrofitWithoutToken.create(Api::class.java)
 
     //Api With Header
     private val interceptorWithToken = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    private var clientWithToken = OkHttpClient.Builder()
-        .addNetworkInterceptor(interceptorWithToken)
-        .addInterceptor(AuthorizationInterceptor(this))
-        .addInterceptor(chuckerInterceptor)
-        .build()
+    private var clientWithToken = OkHttpClient.Builder().addNetworkInterceptor(interceptorWithToken)
+        .addInterceptor(AuthorizationInterceptor(this)).addInterceptor(chuckerInterceptor).build()
     private var retrofitWithToken =
-        Retrofit.Builder()
-            .baseUrl("https://plannerok.ru/api/v1/users/")
-            .client(clientWithToken)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+        Retrofit.Builder().baseUrl("https://plannerok.ru/api/v1/users/").client(clientWithToken)
+            .addConverterFactory(GsonConverterFactory.create()).build()
     private var apiWithToken = retrofitWithToken.create(Api::class.java)
 
     fun setMobileNumber(mobileNumber: String) {
@@ -347,13 +394,13 @@ class MainViewModel(application: Application): ViewModel() {
         }
     }
 }
+
 private class AuthorizationInterceptor(private val viewModel: MainViewModel) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val accessToken = viewModel.getAccessToken()
-        val authenticatedRequest = request.newBuilder()
-            .header("Authorization", "Bearer $accessToken")
-            .build()
+        val authenticatedRequest =
+            request.newBuilder().header("Authorization", "Bearer $accessToken").build()
 
         Log.d("CheckToken", "CheckInAuthInterceptor $accessToken")
         return chain.proceed(authenticatedRequest)

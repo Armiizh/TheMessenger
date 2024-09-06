@@ -20,68 +20,73 @@ import com.example.themessenger.presentation.screens.register.RegisterScreen
 import com.example.themessenger.utils.Constants
 
 @Composable
-fun NavHostMessenger(mViewModel: MainViewModel, navController: NavHostController) {
+fun NavHostMessenger(viewModel: MainViewModel, navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = NavRoute.Login.route) {
         composable(NavRoute.Login.route) {
             LoginScreen(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.Confirm.route) {
             ConfirmScreen(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.Register.route) {
             RegisterScreen(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.Chats.route) {
             ChatsScreen(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.Chat.route) {
             ChatScreen(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.Profile.route) {
             ProfileScreen(
-                navController = navController
+                navController = navController,
+                viewModel
             )
         }
         composable(NavRoute.EditProfile.route) {
             EditProfile(
-                navController = navController
+                navController = navController,
+                viewModel = viewModel
             )
         }
         composable(NavRoute.EditName.route) {
             EditName(
-                navController = navController
+                navController = navController,
+                viewModel
             )
         }
         composable(NavRoute.EditCity.route) {
             EditCity(
-                navController = navController
+                navController = navController,
+                viewModel
             )
         }
         composable(NavRoute.EditBirthday.route) {
             EditBirthday(
                 navController = navController,
-                viewModel = mViewModel
+                viewModel = viewModel
             )
         }
         composable(NavRoute.EditStatus.route) {
             EditStatus(
-                navController = navController
+                navController = navController,
+                viewModel
             )
         }
     }

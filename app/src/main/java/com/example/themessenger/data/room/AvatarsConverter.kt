@@ -14,4 +14,5 @@ class AvatarsConverter {
     fun toAvatars(json: String?): Avatars? {
         return if (json != null) Gson().fromJson(json, Avatars::class.java) else null
     }
+
 }

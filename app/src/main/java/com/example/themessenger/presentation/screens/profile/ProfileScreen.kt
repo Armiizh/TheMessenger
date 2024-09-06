@@ -1,6 +1,7 @@
 package com.example.themessenger.presentation.screens.profile
 
-import android.content.Context
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -47,24 +49,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
-import com.example.themessenger.presentation.MainActivity
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    val userIdString = sharedPreferences.getString("user_id", "")
+fun ProfileScreen(navController: NavHostController, viewModel: MainViewModel) {
+
+
     var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-    if (userIdString != null) {
-        LaunchedEffect(Unit) {
-            val userId = userIdString.toInt()
-            val userDao = MainActivity.database.userDao()
-            userEntity = userDao.getUser(userId)
-        }
+
+    LaunchedEffect(Unit) {
+        userEntity = viewModel.getUser()
     }
 
     Scaffold(
@@ -148,20 +147,29 @@ private fun Content(paddingValues: PaddingValues, userEntity: UserEntity?) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        Icon(
-            modifier = Modifier
-                .size(180.dp)
-                .padding(8.dp)
-                .clip(CircleShape),
-            painter = rememberImagePainter(
-                data = userEntity?.avatar,
-                builder = {
-                    crossfade(true)
-                    placeholder(R.drawable.person)
-                }
-            ),
-            contentDescription = ""
-        )
+        val context = LocalContext.current
+        val imageUri = userEntity?.avatar?.let { Uri.parse(it) }
+        if (imageUri != null) {
+            Image(
+                painter = rememberAsyncImagePainter(model = ImageRequest.Builder(context).data(imageUri).build()),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(8.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.person),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+            )
+        }
+//
         Text(
             text = "Фото профиля",
             fontSize = 22.sp,

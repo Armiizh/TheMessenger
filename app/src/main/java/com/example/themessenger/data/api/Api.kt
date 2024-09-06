@@ -1,9 +1,11 @@
 package com.example.themessenger.data.api
 
+import com.example.themessenger.data.api.models.Avatars
 import com.example.themessenger.data.api.models.CheckAuthCode
 import com.example.themessenger.data.api.models.IsSuccess
 import com.example.themessenger.data.api.models.LoginOut
 import com.example.themessenger.data.api.models.PhoneBase
+import com.example.themessenger.data.api.models.PutUser
 import com.example.themessenger.data.api.models.RefreshToken
 import com.example.themessenger.data.api.models.RegisterIn
 import com.example.themessenger.data.api.models.Token
@@ -11,7 +13,6 @@ import com.example.themessenger.data.api.models.User
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 
@@ -34,5 +35,6 @@ interface Api {
         @Body refreshToken: RefreshToken
     ): Response<Token>
 
-
+    @PUT("me/")
+    suspend fun putUser(@Body putUser: PutUser): Response<Avatars>
 }

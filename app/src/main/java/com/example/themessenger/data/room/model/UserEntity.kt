@@ -1,10 +1,13 @@
 package com.example.themessenger.data.room.model
 
-import androidx.annotation.Nullable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
+import com.example.themessenger.data.room.Avatar64Converter
+import com.example.themessenger.data.room.AvatarsConverter
 
 @Entity(tableName = "users")
+@TypeConverters(AvatarsConverter::class, Avatar64Converter::class)
 data class UserEntity(
     var name: String ?= null,
     val username: String ?= null,
@@ -22,10 +25,15 @@ data class UserEntity(
     val phone: String ?= null,
     val completedTask: Int ?= null,
     val avatars: Avatars?,
-    val zodiacSign: String ?= null
+    var zodiacSign: String ?= null,
+    var avatar64: Avatar64?
 )
 data class Avatars(
     val avatar: String ?= null,
     val bigAvatar: String ?= null,
     val miniAvatar: String ?= null
+)
+data class Avatar64(
+    val base_64: String ?= null,
+    val filename: String ?= null
 )

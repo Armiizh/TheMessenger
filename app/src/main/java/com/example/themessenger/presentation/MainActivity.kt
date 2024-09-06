@@ -1,5 +1,6 @@
 package com.example.themessenger.presentation
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -9,19 +10,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
-import androidx.room.Room
-import com.example.themessenger.data.room.AppDatabase
 import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavHostMessenger
 import com.example.themessenger.presentation.ui.theme.TheMessengerTheme
-import android.Manifest.permission.POST_NOTIFICATIONS
+import com.example.themessenger.utils.Constants.REQUEST_PERMISSION_CODE
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    companion object { lateinit var database: AppDatabase }
-
-    private var REQUEST_PERMISSION_CODE = 123
+    private lateinit var viewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,12 +31,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TheMessengerTheme {
-                database = Room.databaseBuilder(
-                    applicationContext,
-                    AppDatabase::class.java,
-                    "my_database"
-                ).build()
-                val viewModel = MainViewModel(application)
+
+                viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
                 val navController = rememberNavController()
                 NavHostMessenger(viewModel, navController)
             }
@@ -48,13 +44,17 @@ class MainActivity : ComponentActivity() {
         sharedPreferences.edit().clear().apply()
         super.onDestroy()
     }
+
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
                     arrayOf(POST_NOTIFICATIONS),
-                    REQUEST_PERMISSION_CODE)
+                    REQUEST_PERMISSION_CODE
+                )
             }
         }
     }

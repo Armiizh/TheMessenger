@@ -1,6 +1,5 @@
 package com.example.themessenger.presentation.screens.profile.editScreens
 
-import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
@@ -49,7 +47,6 @@ import androidx.navigation.NavHostController
 import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
 import com.example.themessenger.domain.MainViewModel
-import com.example.themessenger.presentation.MainActivity
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
 
@@ -57,25 +54,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditBirthday(navController: NavHostController, viewModel: MainViewModel) {
 
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    val userIdString = sharedPreferences.getString("user_id", "")
     var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-    val userDao = MainActivity.database.userDao()
-
     var day by remember { mutableStateOf("") }
     var month by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
-    if (userIdString != null) {
-        LaunchedEffect(Unit) {
-            val userId = userIdString.toInt()
-            userEntity = userDao.getUser(userId)
-            val birthday = userEntity?.birthday
-            day = birthday?.substring(8, 10).toString()
-            month = birthday?.substring(5, 7).toString()
-            year = birthday?.substring(0, 4).toString()
-        }
+
+    LaunchedEffect(Unit) {
+        userEntity = viewModel.getUser()
+        val birthday = userEntity?.birthday
+        day = birthday?.substring(8, 10).toString()
+        month = birthday?.substring(5, 7).toString()
+        year = birthday?.substring(0, 4).toString()
     }
+
 
     val dayFiledValue =
         remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
@@ -139,17 +130,12 @@ fun EditBirthday(navController: NavHostController, viewModel: MainViewModel) {
                                             "${yearFiledValue.value.text}-${monthFiledValue.value.text}-${dayFiledValue.value.text}"
                                         val zodiacSign =
                                             viewModel.determineZodiacSign(updateBirthday)
-                                        userDao.updateUser(
-                                            id = userEntity?.id,
-                                            name = userEntity?.name,
-                                            phone = userEntity?.phone,
-                                            username = userEntity?.username,
-                                            city = userEntity?.city,
-                                            birthday = updateBirthday,
-                                            zodiacSign = zodiacSign,
-                                            status = userEntity?.status,
-                                            avatar = userEntity?.avatar
-                                        )
+                                        val user = viewModel.getUser()
+                                        user?.let {
+                                            it.birthday = updateBirthday
+                                            it.zodiacSign = zodiacSign
+                                            viewModel.updateUser(user)
+                                        }
                                     }
                                     navController.navigate(NavRoute.EditProfile.route)
                                 },

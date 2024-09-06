@@ -1,6 +1,5 @@
 package com.example.themessenger.presentation.screens.profile.editScreens
 
-import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
@@ -46,24 +44,20 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.themessenger.R
 import com.example.themessenger.data.room.model.UserEntity
-import com.example.themessenger.presentation.MainActivity
+import com.example.themessenger.domain.MainViewModel
 import com.example.themessenger.presentation.navigation.NavRoute
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditStatus(navController: NavHostController) {
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    val userIdString = sharedPreferences.getString("user_id", "")
+fun EditStatus(navController: NavHostController, viewModel: MainViewModel) {
+
     var userEntity by remember { mutableStateOf<UserEntity?>(null) }
-    val userDao = MainActivity.database.userDao()
-    if (userIdString != null) {
-        LaunchedEffect(Unit) {
-            val userId = userIdString.toInt()
-            userEntity = userDao.getUser(userId)
-        }
+
+    LaunchedEffect(Unit) {
+        userEntity = viewModel.getUser()
     }
+
     val status = remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
     status.value = TextFieldValue(
         text = userEntity?.status.toString(),
@@ -109,17 +103,11 @@ fun EditStatus(navController: NavHostController) {
                                 .padding(end = 16.dp)
                                 .clickable {
                                     scope.launch {
-                                        userDao.updateUser(
-                                            id = userEntity?.id,
-                                            name = userEntity?.name,
-                                            phone = userEntity?.phone,
-                                            username = userEntity?.username,
-                                            city = userEntity?.city,
-                                            birthday = userEntity?.birthday,
-                                            zodiacSign = userEntity?.zodiacSign,
-                                            status = status.value.text,
-                                            avatar = userEntity?.avatar
-                                        )
+                                        val user = viewModel.getUser()
+                                        user?.let {
+                                            it.status = status.value.text
+                                            viewModel.updateUser(user)
+                                        }
                                     }
                                     navController.navigate(NavRoute.EditProfile.route)
                                 },
@@ -147,9 +135,12 @@ fun EditStatus(navController: NavHostController) {
                         .focusRequester(focusRequester),
                     value = status.value,
                     onValueChange = { newValue ->
-                        status.value = TextFieldValue(text = newValue.text, selection = TextRange(newValue.text.length))
+                        status.value = TextFieldValue(
+                            text = newValue.text,
+                            selection = TextRange(newValue.text.length)
+                        )
                     },
-                    label = { Text(text = "Имя")},
+                    label = { Text(text = "Имя") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
